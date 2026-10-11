@@ -628,6 +628,12 @@
   document.addEventListener("pointerdown", showTip);
   document.addEventListener("scroll", () => (tip.hidden = true), true);
 
+  // ホーム画面から開いたアプリ表示には再読み込みボタンが無いので、20分以上たってから戻ってきたら最新データを読み直す
+  const loadedAt = Date.now();
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && Date.now() - loadedAt > 20 * 60 * 1000 && !$("#teamDlg").open) location.reload();
+  });
+
   // ---------- 起動 ----------
   (async function init() {
     const m = location.hash.match(/^#(j[123])(?:\/(\w+))?/);

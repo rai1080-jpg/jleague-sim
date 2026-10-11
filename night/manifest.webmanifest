@@ -1,0 +1,17 @@
+{
+  "name": "J.League Forecast Night",
+  "short_name": "JL Forecast",
+  "description": "J1・J2・J3 の順位表と、残り試合のシミュレーションによる最終順位・勝ち点予測（ダーク版）",
+  "lang": "ja",
+  "id": "./",
+  "start_url": "./",
+  "scope": "../",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

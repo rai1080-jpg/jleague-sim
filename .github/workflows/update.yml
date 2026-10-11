@@ -48,7 +48,7 @@ jobs:
           V="${GITHUB_SHA::7}-$(date +%s)"
           sed -i "s/__V__/$V/g" index.html night/index.html
           mkdir -p site
-          cp -r index.html style.css config.js sim.js app.js data night site/
+          cp -r index.html style.css config.js sim.js app.js manifest.webmanifest icons data night site/
       - if: steps.compare.outputs.changed == 'true'
         uses: actions/upload-pages-artifact@v3
         with:

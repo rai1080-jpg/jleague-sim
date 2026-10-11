@@ -18,6 +18,10 @@ J1・J2・J3（2026/27 シーズン）の順位表・試合結果と、残り試
 - `night/`：ダーク版（黒い地に抽象画の背景 `night/bg.svg`・左サイドバー・大きな英字見出し）。2つの版は互いにリンクで切り替えられ、見ていたリーグとタブを引き継ぐ。`app.js`・`sim.js`・`config.js` と `data/` は共通で、
   `night/night.js` はダーク版だけのスクロール処理
 
+## ホーム画面のアイコン
+`icons/`（ライト版）と `night/icons/`（ダーク版）に PNG を置き、`manifest.webmanifest` と `apple-touch-icon` で指定している。
+作り直すときは `python tools/make_icons.py`（Pillow が必要。確認用の一覧が `tools/icons-preview.png` にできる）。
+
 ## 予測の仕組み（sim.js）
 1. 今季の得点・失点から各チームの攻撃力・守備力をポアソンモデルで推定（対戦相手の強さを考慮。
    試合数が少ないうちは `priorGames` 試合分だけリーグ平均に寄せる）。ホーム有利もデータから推定
