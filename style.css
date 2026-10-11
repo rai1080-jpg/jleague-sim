@@ -88,6 +88,11 @@ h3 { font-size: 14px; font-weight: 500; letter-spacing: .08em; margin: 28px 0 8p
 table { border-collapse: collapse; width: 100%; }
 th, td { padding: 9px 5px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
 thead th { border-bottom: 1px solid var(--ink); }
+/* スクロールしても表の見出しを上に残す（上のタブの帯の下に止まる）。
+   横スクロールの枠の中では固定できないので、表が収まっているときは枠の制限を外す（.fits は app.js が付ける） */
+.tbl-wrap.fits { overflow-x: visible; }
+#main thead th { position: sticky; top: var(--stick-top, 0px); z-index: 2; background: var(--bg); border-bottom: 0; box-shadow: inset 0 -1px 0 var(--ink); }
+#main .heat .hh, #main .heat > div:first-child { position: sticky; top: var(--stick-top, 0px); z-index: 1; background: var(--bg); }
 th { font-size: 11px; color: var(--ink-2); font-weight: 500; text-align: right; letter-spacing: .06em; line-height: 1.35; }
 th.l, td.l { text-align: left; }
 td { text-align: right; }

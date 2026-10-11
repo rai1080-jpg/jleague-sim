@@ -474,6 +474,7 @@
     }
     const view = { table: viewTable, predict: viewPredict, fixtures: viewFixtures, stats: viewStats, insight: viewInsight }[state.tab] || viewTable;
     $("#main").innerHTML = view(L);
+    updateSticky();
   }
 
   document.addEventListener("click", (e) => {
@@ -608,6 +609,22 @@
     tip.style.top = Math.max(8, e.clientY - 40) + "px";
   }
   document.addEventListener("pointermove", showTip);
+
+  // 表の見出しを止める位置（上に固定されている帯の高さ）と、横スクロールが要らない表の印を更新する
+  function updateSticky() {
+    let top = 0;
+    document.querySelectorAll("#tabs, .side").forEach((el) => {
+      const cs = getComputedStyle(el);
+      if (cs.position === "sticky") top = Math.max(top, el.offsetHeight + (parseFloat(cs.top) || 0));
+    });
+    document.documentElement.style.setProperty("--stick-top", `${top}px`);
+    document.querySelectorAll("#main .tbl-wrap").forEach((w) => {
+      w.classList.remove("fits");
+      w.classList.toggle("fits", w.scrollWidth <= w.clientWidth + 1);
+    });
+  }
+  window.addEventListener("resize", updateSticky);
+  if (document.fonts) document.fonts.ready.then(updateSticky); // 文字の読み込みで幅が変わるため
   document.addEventListener("pointerdown", showTip);
   document.addEventListener("scroll", () => (tip.hidden = true), true);
 
