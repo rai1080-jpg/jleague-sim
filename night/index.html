@@ -20,6 +20,8 @@
 <script>window.DATA_BASE = "../data/";</script>
 </head>
 <body>
+<!-- 背景：ゆっくり漂う色のにじみ＋流れる線（動きを減らす設定では止まる） -->
+<div class="bg" aria-hidden="true"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i><i class="b5"></i><img class="bg-lines" src="bg-lines.svg" alt=""><span class="bg-shade"></span></div>
 
 <aside class="side">
   <div class="side-panel">
@@ -35,9 +37,6 @@
       <button data-tab="stats">スタッツ</button>
       <button data-tab="insight">分析</button>
     </nav>
-    <a class="pill-link" href="../" data-mode-link>ライト版
-      <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="4"/><path d="M10 1.5v2.5M10 16v2.5M1.5 10H4M16 10h2.5M4 4l1.8 1.8M14.2 14.2 16 16M4 16l1.8-1.8M14.2 5.8 16 4"/></svg>
-    </a>
   </div>
   <div class="side-league" id="leagueSeg" role="tablist" aria-label="リーグ">
     <span class="seg"><button data-league="j1">J1</button><button data-league="j2">J2</button><button data-league="j3">J3</button></span>
