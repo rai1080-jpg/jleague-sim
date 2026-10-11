@@ -84,16 +84,12 @@ button { font: inherit; color: inherit; cursor: pointer; letter-spacing: inherit
 .content { margin-left: calc(var(--side-w) + var(--gap) * 2); min-width: 0; }
 
 /* ---------- ヒーロー ---------- */
-.hero { position: relative; min-height: 100vh; min-height: 100svh; display: grid; grid-template-columns: minmax(0, 1fr);
+.hero { position: relative; min-height: 80vh; min-height: 80svh; display: grid; grid-template-columns: minmax(0, 1fr);
   align-items: center; gap: 24px; padding: 64px 0 64px 68px; overflow: hidden; }
 .hero-text { position: relative; z-index: 1; }
 .hero h1 { margin: 0 0 40px; font: 500 clamp(40px, 4.6vw, 68px)/1.18 var(--en); letter-spacing: -.02em; }
 .hero-ja { margin: 0 0 30px; font-size: clamp(20px, 2vw, 28px); font-weight: 700; letter-spacing: .08em; }
-.hero-lead { margin: 0 0 40px; font-size: 15px; line-height: 2.1; color: var(--ink-2); letter-spacing: .08em; }
-.more { display: inline-flex; align-items: center; gap: 26px; border: 0; background: none; padding: 0; font: 500 22px var(--en); letter-spacing: -.01em; }
-.more-dot { position: relative; width: 74px; height: 74px; border-radius: 50%; background: #fff; transition: transform .2s; }
-.more-dot::after { content: ""; position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: #000; }
-.more:hover .more-dot { transform: scale(1.06); }
+.hero-lead { margin: 0; font-size: 15px; line-height: 2.1; color: var(--ink-2); letter-spacing: .08em; }
 
 
 /* ---------- 本文 ---------- */
@@ -270,9 +266,7 @@ td.wrap { white-space: normal; min-width: 6em; }
   .hero { min-height: 0; grid-template-columns: 1fr; padding: 40px 16px 24px; gap: 8px; }
   .hero h1 { margin-bottom: 24px; font-size: clamp(34px, 9vw, 52px); }
   .hero-ja { margin-bottom: 18px; }
-  .hero-lead { font-size: 13.5px; margin-bottom: 28px; }
-  .more { font-size: 18px; gap: 18px; }
-  .more-dot { width: 58px; height: 58px; }
+  .hero-lead { font-size: 13.5px; margin-bottom: 8px; }
   main { padding: 0 12px 16px; }
   section.card { padding: 28px 16px 24px; border-radius: 16px; margin-bottom: 12px; }
   .tbl-wrap { margin: 0 -16px; padding: 0 16px; }

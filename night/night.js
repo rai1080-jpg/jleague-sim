@@ -1,4 +1,4 @@
-// Night 版だけの処理：タブや View More を押したときのスクロール
+// Night 版だけの処理：タブを押したときのスクロール
 (function () {
   "use strict";
   const $ = (s) => document.querySelector(s);
@@ -11,6 +11,6 @@
   document.addEventListener("click", (e) => {
     const t = e.target.closest("button");
     if (!t) return;
-    if (t.id === "viewMore" || t.dataset.tab) toMain();
+    if (t.dataset.tab) toMain();
   });
 })();
