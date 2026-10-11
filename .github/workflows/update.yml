@@ -2,12 +2,11 @@ name: 試合結果の取得と公開
 
 on:
   schedule:
-    - cron: "0 21 * * *"    # 毎日 6:00 JST
-    - cron: "30 9 * * *"    # 毎日 18:30 JST（デーゲームの結果）
-    - cron: "30 14 * * *"   # 毎日 23:30 JST（ナイトゲームの結果）
-  workflow_dispatch:         # Actions 画面から手動実行
+    - cron: "0 21 * * *"         # 毎日 6:00 JST
+    - cron: "*/30 4-14 * * *"    # 毎日 13:00〜23:30 JST は30分ごと（試合の多い時間帯）
+  workflow_dispatch:              # Actions 画面から手動実行
   push:
-    branches: [main]         # 改修を push したらすぐ反映
+    branches: [main]              # 改修を push したらすぐ反映
 
 permissions:
   contents: read
@@ -21,28 +20,43 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.compare.outputs.changed }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: python fetch_data.py
-      - uses: actions/setup-node@v4
+      # 定期実行で、取り直したデータが公開中のものと同じなら公開し直さない（push・手動実行は必ず公開）
+      - id: compare
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            python compare_published.py "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/data/"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.compare.outputs.changed == 'true'
+        uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - run: node tests/check.js
+      - if: steps.compare.outputs.changed == 'true'
+        run: node tests/check.js
       # スマホに古い見た目・処理が残らないよう、読み込むファイルに更新ごとの番号を付ける
-      - run: |
+      - if: steps.compare.outputs.changed == 'true'
+        run: |
           V="${GITHUB_SHA::7}-$(date +%s)"
           sed -i "s/__V__/$V/g" index.html night/index.html
           mkdir -p site
           cp -r index.html style.css config.js sim.js app.js data night site/
-      - uses: actions/upload-pages-artifact@v3
+      - if: steps.compare.outputs.changed == 'true'
+        uses: actions/upload-pages-artifact@v3
         with:
           path: site
 
   deploy:
     needs: build
+    if: needs.build.outputs.changed == 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

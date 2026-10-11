@@ -34,7 +34,7 @@ python -m http.server 8793    # http://localhost:8793 を開く
 ```
 
 ## 公開
-GitHub Actions（`.github/workflows/update.yml`）が毎日 6:00 / 18:30 / 23:30 JST にデータを取り直し、
-GitHub Pages へデプロイする。データ（data/）はリポジトリに入れない。
+GitHub Actions（`.github/workflows/update.yml`）が毎日 6:00 と、13:00〜23:30 JST は30分ごとにデータを取り直し、
+GitHub Pages へデプロイする。定期実行では `compare_published.py` で公開中のデータと比べ、変化がなければ公開し直さない。データ（data/）はリポジトリに入れない。
 
 データ出典：[J.League Data Site](https://data.j-league.or.jp/)
