@@ -27,7 +27,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
       - run: python fetch_data.py
+      - run: node tools/build_history.js   # 節ごとの予測の推移（data/history.json）
       # 定期実行で、取り直したデータが公開中のものと同じなら公開し直さない（push・手動実行は必ず公開）
       - id: compare
         run: |
@@ -36,10 +40,6 @@ jobs:
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
-      - if: steps.compare.outputs.changed == 'true'
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
       - if: steps.compare.outputs.changed == 'true'
         run: node tests/check.js
       # スマホに古い見た目・処理が残らないよう、読み込むファイルに更新ごとの番号を付ける

@@ -267,6 +267,13 @@ td.wrap { white-space: normal; min-width: 6em; }
   .stats-tbl[data-group="etc"] :is(.g-atk, .g-def) { display: none; }
 }
 
+/* ---------- 予測の推移 ---------- */
+svg .hl { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+svg .hl.fav { stroke-width: 3.4; }
+.hist-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 8px; font-size: 12.5px; }
+.hist-legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: 3px; background: var(--c); }
+.hist-legend b { font-weight: 500; color: var(--ink-2); }
+
 /* ---------- ツールチップ ---------- */
 .tip { position: fixed; z-index: 100; pointer-events: none; background: #fff; color: #000; font-size: 12px; padding: 4px 12px; border-radius: 99px; white-space: nowrap; }
 

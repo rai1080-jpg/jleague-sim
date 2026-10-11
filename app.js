@@ -10,7 +10,7 @@
   const DATA = window.DATA_BASE || "data/"; // 別デザインのページ（night/ など）からも同じデータを読む
   const todayStr = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
 
-  const state = { league: "j1", tab: "table", meta: null, L: {}, sort: "rank", sec: {}, statSort: { key: "gf", dir: -1 }, statGroup: "atk" };
+  const state = { league: "j1", tab: "table", meta: null, L: {}, sort: "rank", sec: {}, statSort: { key: "gf", dir: -1 }, statGroup: "atk", hzone: "champ" };
 
   // ---------- お気に入り（この端末のブラウザにだけ保存） ----------
   const FAV_KEY = "jleague-sim.favs";
@@ -28,6 +28,7 @@
     if (state.L[key]) return state.L[key];
     const d = await fetch(`${DATA}${key}.json`, { cache: "no-cache" }).then((r) => r.json());
     const cfg = LC[key];
+    if (!state.histP) state.histP = fetch(`${DATA}history.json`, { cache: "no-cache" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
     const L = { key, cfg, teams: d.teams, matches: d.matches, teamStats: d.teamStats || {}, scorers: d.scorers || [] };
     L.table = J.standings(L.teams, L.matches);
     L.row = Object.fromEntries(L.table.map((r) => [r.team, r]));
@@ -39,6 +40,7 @@
     L.sim = J.simulate(L.teams, L.matches, L.model, SC, L.upcoming);
     L.sum = J.summarize(L.sim, cfg.zones);
     L.impact = J.matchImpact(L.sim, cfg.zones);
+    L.phist = ((await state.histP) || {})[key] || null; // 節ごとの予測の推移
     state.L[key] = L;
     return L;
   }
@@ -191,7 +193,49 @@
       <p class="lead">色が濃いほど、その順位で終える確率が高い。マスをタップで数値表示。</p>
       <div class="tbl-wrap"><div class="heat" style="--n:${T}">${hm.join("")}</div></div>
       <div class="heat-scale">0%<span class="bar"></span>${pct(pMax)}</div>
-    </section>`;
+    </section>
+    ${predHistory(L)}`;
+  }
+
+  // 予測の推移：各節の時点で、その節までの結果だけを使って予測し直した確率の線グラフ
+  const HIST_COLORS = ["#e56c5e", "#2f6bd8", "#1f9e6a", "#c040c8", "#c99a1e", "#7c6cf0", "#2bb3a3", "#9a6b3c"];
+  function predHistory(L) {
+    const H = L.phist;
+    if (!H || !H.secs.length) return "";
+    const zones = L.cfg.zones;
+    const zone = zones.find((z) => z.key === state.hzone) || zones[0];
+    const last = H.secs.length - 1;
+    const series = (t) => H.teams[t] && H.teams[t][zone.key];
+    // 一度でも5%以上になったチームを、最新の確率が高い順に6チームまで。お気に入りは必ず入れる
+    let teams = L.teams.filter((t) => series(t) && Math.max(...series(t)) >= 0.05)
+      .sort((a, b) => series(b)[last] - series(a)[last]).slice(0, 6);
+    favList(L.key).forEach((t) => { if (series(t) && !teams.includes(t)) teams.push(t); });
+    const chips = zones.map((z) => `<button class="chip" data-hzone="${z.key}" aria-pressed="${z.key === zone.key}">${esc(z.short)}</button>`).join("");
+    const head = `<section class="card"><h2>予測の推移</h2>
+      <p class="lead">各節の時点に戻り、その節までの結果だけで予測し直した${esc(zone.short)}の確率。点をタップすると数値を表示します。
+        一度でも5%以上になったチーム（最大6チーム）とお気に入りを表示。${H.complete[last] ? "" : `第${H.secs[last]}節は途中経過です。`}</p>
+      <div class="sortbar">${chips}</div>`;
+    if (!teams.length) return `${head}<p class="lead">この確率が5%を超えたチームはまだありません。</p></section>`;
+
+    const W = 360, Ht = 200, pl = 34, pr = 10, pt = 10, pb = 22;
+    const n = H.secs.length;
+    const x = (i) => (n === 1 ? (pl + W - pr) / 2 : pl + (i / (n - 1)) * (W - pl - pr));
+    const vmax = Math.min(1, Math.max(0.2, Math.ceil(Math.max(...teams.map((t) => Math.max(...series(t)))) * 5) / 5));
+    const y = (v) => pt + (1 - v / vmax) * (Ht - pt - pb);
+    const grid = [0, .25, .5, .75, 1].map((f) => f * vmax).map((v) =>
+      `<line class="grid" x1="${pl}" x2="${W - pr}" y1="${y(v)}" y2="${y(v)}"/><text x="${pl - 5}" y="${y(v) + 3}" text-anchor="end">${Math.round(v * 100)}%</text>`).join("");
+    const step = n > 20 ? 5 : n > 10 ? 2 : 1;
+    const xt = H.secs.map((s, i) => (i % step === 0 || i === last ? `<text x="${x(i)}" y="${Ht - 6}" text-anchor="middle">${s}</text>` : "")).join("");
+    const lines = teams.map((t, k) => {
+      const c = HIST_COLORS[k % HIST_COLORS.length], v = series(t), fav = isFav(L.key, t);
+      const d = v.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p).toFixed(1)}`).join("");
+      const tips = v.map((p, i) => `<circle cx="${x(i)}" cy="${y(p)}" r="${fav ? 3.4 : 2.6}" fill="${c}"/>` +
+        `<circle cx="${x(i)}" cy="${y(p)}" r="9" fill="transparent" data-tip="${esc(t)}・第${H.secs[i]}節${H.complete[i] ? "" : "（途中）"}：${esc(zone.short)} ${pct(p)}"/>`).join("");
+      return `<path class="hl${fav ? " fav" : ""}" d="${d}" stroke="${c}"/>${tips}`;
+    }).join("");
+    const legend = teams.map((t, k) => `<span><i style="--c:${HIST_COLORS[k % HIST_COLORS.length]}"></i>${teamBtn(t)} <b>${pct(series(t)[last])}</b></span>`).join("");
+    return `${head}<svg viewBox="0 0 ${W} ${Ht}" width="100%" role="img" aria-label="${esc(zone.short)}の確率の推移">${grid}${xt}${lines}</svg>
+      <div class="hist-legend">${legend}</div><p class="lead" style="margin-top:6px">横軸は節。</p></section>`;
   }
 
   // ---------- タブ：日程・結果 ----------
@@ -490,6 +534,7 @@
       state.statSort = state.statSort.key === k ? { key: k, dir: -state.statSort.dir } : { key: k, dir: c.low ? 1 : -1 };
       render();
     }
+    else if (t.dataset.hzone) { state.hzone = t.dataset.hzone; render(); }
     else if (t.dataset.sgroup) {
       state.statGroup = t.dataset.sgroup;
       const first = STAT_COLS.find((c) => c.g === state.statGroup); // 見えている列で並べ替える
