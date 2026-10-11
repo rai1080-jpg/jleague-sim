@@ -1,0 +1,52 @@
+name: 試合結果の取得と公開
+
+on:
+  schedule:
+    - cron: "0 21 * * *"    # 毎日 6:00 JST
+    - cron: "30 9 * * *"    # 毎日 18:30 JST（デーゲームの結果）
+    - cron: "30 14 * * *"   # 毎日 23:30 JST（ナイトゲームの結果）
+  workflow_dispatch:         # Actions 画面から手動実行
+  push:
+    branches: [main]         # 改修を push したらすぐ反映
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python fetch_data.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node tests/check.js
+      # スマホに古い見た目・処理が残らないよう、読み込むファイルに更新ごとの番号を付ける
+      - run: |
+          V="${GITHUB_SHA::7}-$(date +%s)"
+          sed -i "s/__V__/$V/g" index.html night/index.html
+          mkdir -p site
+          cp -r index.html style.css config.js sim.js app.js data night site/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

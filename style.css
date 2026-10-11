@@ -1,0 +1,186 @@
+/* デザインの参考：isnome.com（淡い青灰の地、墨色の文字、角かっこのテキストリンク、珊瑚色の楕円ボタン） */
+:root {
+  color-scheme: light;
+  --bg: #e3ebeb;
+  --bg-2: #d5e0e1;      /* ヒートマップの地・薄い面 */
+  --paper: #eef3f3;     /* シート */
+  --line: rgba(26, 26, 26, .16);
+  --grid: rgba(26, 26, 26, .08);
+  --ink: #1a1a1a;
+  --ink-2: #474b4b;
+  --ink-3: #7b8282;
+  --coral: #e56c5e;
+  --coral-soft: #f1b3aa;
+  --mark: #2f5359;      /* グラフの主色（深い青緑） */
+  --range: #9dbcc0;
+  --heat-hi: #1f3e43;
+  --z-top: #1a1a1a;     /* 優勝 */
+  --z-top2: #3f6f76;    /* 昇格 */
+  --z-po: #93b5b9;      /* プレーオフ */
+  --z-down: #e56c5e;    /* 降格・入替 */
+  --good: #2f6b4f;
+  --bad: #c4493c;
+  --up: #2f6b4f;
+  --down: #c4493c;
+  --sans: "Albert Sans", "Zen Kaku Gothic New", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 400 14px/1.7 var(--sans); letter-spacing: .03em;
+  font-feature-settings: "tnum"; font-variant-numeric: tabular-nums;
+  padding-bottom: 88px; /* 右下のリーグ切替ボタンと重ならないように */
+}
+a { color: var(--ink); text-underline-offset: 3px; }
+button { font: inherit; color: inherit; cursor: pointer; letter-spacing: inherit; }
+.muted { color: var(--ink-3); }
+.num { text-align: right; }
+
+/* ---------- ヒーロー ---------- */
+.hero { position: relative; max-width: 1080px; margin: 0 auto; padding: 40px 24px 28px; }
+.eyebrow { margin: 0 0 18px; font-size: 13px; letter-spacing: .08em; color: var(--ink-2); }
+.hero h1 { margin: 0 0 14px; font-size: clamp(22px, 4.2vw, 34px); font-weight: 500; letter-spacing: .12em; line-height: 1.5; }
+.hero-lead { margin: 0; font-size: 14px; font-weight: 500; letter-spacing: .1em; line-height: 2; color: var(--ink); }
+.ib { display: inline-block; }
+.mark { position: absolute; right: 24px; top: 28px; width: 56px; height: 70px; }
+.mark path { fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linecap: round; }
+
+/* ---------- タブ（角かっこのテキストリンク） ---------- */
+.tabs { position: sticky; top: 0; z-index: 10; display: flex; gap: 4px 18px; max-width: 1080px; margin: 0 auto; padding: 10px 24px;
+  background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(8px); overflow-x: auto; scrollbar-width: none;
+  border-bottom: 1px solid var(--line); }
+.tabs button { border: 0; background: none; padding: 4px 0; font-size: 15px; font-weight: 500; color: var(--ink-3); white-space: nowrap; }
+.tabs button[aria-selected="true"] { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; }
+.tabs button[aria-selected="true"]::before { content: "[ "; text-decoration: none; display: inline-block; white-space: pre; }
+.tabs button[aria-selected="true"]::after { content: " ]"; text-decoration: none; display: inline-block; white-space: pre; }
+
+/* ---------- 右下の楕円ボタン（リーグ切替） ---------- */
+.pills { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 20; display: flex; gap: 8px; }
+.pills button { width: 72px; height: 42px; border-radius: 50%; border: 1px solid var(--coral); background: color-mix(in srgb, var(--bg) 85%, transparent);
+  font-family: "Albert Sans", sans-serif; font-size: 16px; backdrop-filter: blur(6px); transition: background .2s; }
+.pills button[aria-selected="true"] { background: var(--coral); }
+
+main { max-width: 1080px; margin: 0 auto; padding: 28px 24px 24px; }
+.loading { color: var(--ink-3); }
+section.card { margin: 0 0 56px; }
+h2 { font-size: 20px; font-weight: 500; letter-spacing: .1em; margin: 0 0 6px; }
+h3 { font-size: 14px; font-weight: 500; letter-spacing: .08em; margin: 28px 0 8px; }
+.lead { color: var(--ink-2); font-size: 12.5px; margin: 0 0 16px; }
+.foot { max-width: 1080px; margin: 0 auto; padding: 24px 24px 32px; color: var(--ink-2); font-size: 12px; border-top: 1px solid var(--line); }
+
+/* ---------- 表 ---------- */
+.tbl-wrap { overflow-x: auto; margin: 0 -24px; padding: 0 24px; }
+table { border-collapse: collapse; width: 100%; }
+th, td { padding: 9px 5px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+thead th { border-bottom: 1px solid var(--ink); }
+th { font-size: 11px; color: var(--ink-2); font-weight: 500; text-align: right; letter-spacing: .06em; line-height: 1.35; }
+th.l, td.l { text-align: left; }
+td { text-align: right; }
+.rank { width: 34px; text-align: center; font-family: "Albert Sans", sans-serif; }
+tr.z-top .rank, tr.z-top2 .rank, tr.z-po .rank, tr.z-down .rank { box-shadow: inset 3px 0 0 var(--zc); }
+tr.z-top { --zc: var(--z-top); } tr.z-top2 { --zc: var(--z-top2); } tr.z-po { --zc: var(--z-po); } tr.z-down { --zc: var(--z-down); }
+.team-btn { border: 0; background: none; padding: 0; font-weight: 500; text-align: left; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 4px; }
+.team-btn:hover { text-decoration-color: var(--ink); }
+.pts { font-weight: 500; font-size: 15px; }
+.form { letter-spacing: 2px; font-size: 12px; }
+.f-W { color: var(--good); } .f-D { color: var(--ink-3); } .f-L { color: var(--bad); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12px; color: var(--ink-2); margin: 12px 0; }
+.legend i { display: inline-block; width: 14px; height: 3px; margin-right: 6px; vertical-align: 3px; background: var(--zc); }
+.lg-top { --zc: var(--z-top); } .lg-top2 { --zc: var(--z-top2); } .lg-po { --zc: var(--z-po); } .lg-down { --zc: var(--z-down); }
+
+.pct { min-width: 48px; }
+.pct.zero { color: var(--ink-3); }
+.rng-txt { display: block; font-size: 10.5px; font-weight: 400; color: var(--ink-3); line-height: 1.1; }
+.sortbar { display: flex; gap: 14px; align-items: center; font-size: 12.5px; color: var(--ink-2); margin-bottom: 8px; }
+.chip { border: 0; background: none; padding: 0; color: var(--ink-3); }
+.chip[aria-pressed="true"] { color: var(--ink); text-decoration: underline; }
+.chip[aria-pressed="true"]::before { content: "[ "; white-space: pre; }
+.chip[aria-pressed="true"]::after { content: " ]"; white-space: pre; }
+
+/* ---------- 予想勝点バー ---------- */
+.ptsbar { position: relative; height: 18px; min-width: 140px; }
+.ptsbar .cur { position: absolute; left: 0; top: 8px; height: 2px; background: var(--ink-3); }
+.ptsbar .rng { position: absolute; top: 5px; height: 8px; background: var(--range); border-radius: 4px; }
+.ptsbar .med { position: absolute; top: 1px; width: 2px; height: 16px; background: var(--ink); border-radius: 1px; }
+.axis { position: relative; height: 14px; font-size: 10px; color: var(--ink-3); }
+.axis span { position: absolute; transform: translateX(-50%); }
+
+/* ---------- ヒートマップ ---------- */
+.heat { display: grid; gap: 2px; font-size: 11px; }
+.heat .hl { padding-right: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; align-self: center; }
+.heat .hc { height: 20px; border-radius: 2px; }
+.heat .hh { text-align: center; color: var(--ink-3); font-size: 10px; font-family: "Albert Sans", sans-serif; }
+.heat-scale { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--ink-3); margin-top: 10px; }
+.heat-scale .bar { width: 120px; height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--bg-2), var(--heat-hi)); }
+
+/* ---------- 日程 ---------- */
+.secnav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.secnav button { border: 0; background: none; padding: 4px 0; font-weight: 500; text-decoration: underline; }
+.secnav button:disabled { color: var(--ink-3); text-decoration: none; cursor: default; }
+.secnav select { font: inherit; padding: 4px 10px; border: 0; border-bottom: 1px solid var(--ink); background: transparent; color: var(--ink); border-radius: 0; }
+.match { border-top: 1px solid var(--line); padding: 14px 0 16px; }
+.match .meta { font-size: 11.5px; color: var(--ink-3); display: flex; justify-content: space-between; gap: 8px; }
+.match .row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; margin: 6px 0; }
+.match .h { text-align: right; } .match .a { text-align: left; }
+.match .sc { font-family: "Albert Sans", sans-serif; font-weight: 500; font-size: 22px; min-width: 72px; text-align: center; letter-spacing: .06em; }
+.match .sc.vs { font-size: 13px; color: var(--ink-3); }
+.probbar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; gap: 2px; margin: 8px 0 4px; }
+.probbar div { height: 100%; }
+.pb-h { background: var(--mark); } .pb-d { background: var(--ink-3); opacity: .45; } .pb-a { background: var(--coral); }
+.problbl { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--ink-2); }
+
+/* ---------- 分析 ---------- */
+.lines { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0 24px; }
+.stat { border-top: 1px solid var(--ink); padding: 10px 0 12px; }
+.stat .k { font-size: 12px; color: var(--ink-2); }
+.stat .v { font-family: "Albert Sans", sans-serif; font-size: 30px; font-weight: 400; line-height: 1.3; }
+.stat .s { font-size: 11.5px; color: var(--ink-3); }
+.hot { border-top: 1px solid var(--line); padding: 12px 0; }
+.hot .t { font-weight: 500; font-size: 15px; }
+.hot .x { font-size: 12.5px; color: var(--ink-2); }
+.hbar { height: 6px; background: var(--mark); border-radius: 0 3px 3px 0; }
+.hbar-cell { width: 40%; min-width: 80px; }
+.luck.up { color: var(--up); } .luck.down { color: var(--down); }
+
+/* ---------- チーム詳細 ---------- */
+dialog.sheet { border: 0; padding: 0; width: min(680px, 100vw); max-height: 92vh; margin: auto auto 0;
+  background: var(--paper); color: var(--ink); box-shadow: 0 -8px 40px rgba(26,26,26,.18); }
+@media (min-width: 720px) { dialog.sheet { margin: auto; } }
+dialog::backdrop { background: rgba(26,26,26,.28); }
+.sheet-head { position: sticky; top: 0; background: var(--paper); display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  padding: 18px 24px 12px; border-bottom: 1px solid var(--line); z-index: 1; }
+.sheet-head h2 { margin: 0; font-size: 17px; }
+.close { flex: none; width: 64px; height: 36px; border: 0; border-radius: 50%; background: var(--coral); font-size: 13px; }
+#dlgBody { padding: 8px 24px 28px; }
+#dlgBody .tbl-wrap { margin: 0 -24px; padding: 0 24px; }
+.chips { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 0 20px; }
+svg text { fill: var(--ink-3); font-size: 10px; font-family: "Albert Sans", sans-serif; }
+svg .grid { stroke: var(--grid); }
+svg .ln { stroke: var(--mark); stroke-width: 2; fill: none; }
+svg .dot { fill: var(--mark); stroke: var(--paper); stroke-width: 2; }
+svg .bar { fill: var(--mark); }
+svg .band-top { fill: var(--z-top2); opacity: .12; } svg .band-po { fill: var(--z-po); opacity: .2; } svg .band-down { fill: var(--z-down); opacity: .16; }
+.rest { font-size: 12.5px; }
+.rest td { padding: 6px 4px; }
+
+/* ---------- ツールチップ ---------- */
+.tip { position: fixed; z-index: 100; pointer-events: none; background: var(--ink); color: var(--bg); font-size: 12px; padding: 4px 10px; border-radius: 99px; white-space: nowrap; }
+
+@media (max-width: 480px) {
+  .hero { padding: 28px 16px 20px; }
+  .mark { right: 16px; top: 22px; width: 42px; height: 54px; }
+  .hero h1 { padding-right: 48px; }
+  .tabs { padding: 10px 16px; gap: 4px 14px; }
+  .tabs button { font-size: 14px; }
+  main { padding: 24px 16px; }
+  .tbl-wrap { margin: 0 -16px; padding: 0 16px; }
+  .foot { padding: 20px 16px 32px; }
+  .hide-sm { display: none; }
+  th, td { padding: 9px 3px; }
+  .pills button { width: 60px; height: 38px; }
+  .sheet-head { padding: 16px 16px 10px; }
+  #dlgBody { padding: 8px 16px 24px; }
+  #dlgBody .tbl-wrap { margin: 0 -16px; padding: 0 16px; }
+}

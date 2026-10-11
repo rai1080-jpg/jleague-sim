@@ -1,0 +1,5 @@
+# 試合データは GitHub Actions が毎回取得し直して Pages へ直接デプロイする
+data/
+site/
+__pycache__/
+.claude/

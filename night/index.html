@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jリーグ順位予測 Night</title>
+<meta name="description" content="J1・J2・J3 の順位表と、残り試合のシミュレーションによる最終順位・勝ち点予測（ダーク版）">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='16' fill='%23000'/%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%237c6cf0' stroke-width='2.4'/%3E%3Ccircle cx='13' cy='14' r='4' fill='%231f9e6a'/%3E%3Ccircle cx='20' cy='18' r='3' fill='%232856c8'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="style.css?v=__V__">
+<script>window.DATA_BASE = "../data/";</script>
+</head>
+<body>
+
+<aside class="side">
+  <div class="side-panel">
+    <a class="logo" href="#top" aria-label="ページの先頭へ">
+      <span class="logo-mark">JLF</span>
+      <span class="logo-sub">J.League Forecast <span id="season"></span></span>
+    </a>
+    <nav class="tabs" id="tabs" role="tablist" aria-label="表示">
+      <button data-tab="table">順位表</button>
+      <button data-tab="predict">最終予測</button>
+      <button data-tab="fixtures">日程・結果</button>
+      <button data-tab="insight">分析</button>
+    </nav>
+    <a class="pill-link" href="../">ライト版
+      <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="4"/><path d="M10 1.5v2.5M10 16v2.5M1.5 10H4M16 10h2.5M4 4l1.8 1.8M14.2 14.2 16 16M4 16l1.8-1.8M14.2 5.8 16 4"/></svg>
+    </a>
+  </div>
+  <div class="side-league" id="leagueSeg" role="tablist" aria-label="リーグ">
+    <span class="side-league-k">League</span>
+    <span class="seg"><button data-league="j1">J1</button><button data-league="j2">J2</button><button data-league="j3">J3</button></span>
+  </div>
+  <button class="side-cta" data-tab="predict">最終予測を見る
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16M7 16V10M12 16V5M17 16v-4"/></svg>
+  </button>
+</aside>
+
+<div class="content">
+  <header class="hero" id="top">
+    <div class="hero-text">
+      <h1>Every Point,<br>Every Possibility.</h1>
+      <p class="hero-ja">最後に笑うのは、どこだ。</p>
+      <p class="hero-lead"><span class="ib">J1・J2・J3 のいまの順位と、</span><br><span class="ib">残り試合を<span id="runsHero">10,000</span>回たどった先の順位。</span><br><span class="ib">勝ち点の行方を、</span><span class="ib">データで確かめます。</span></p>
+      <button class="more" id="viewMore">View More <span class="more-dot" aria-hidden="true"></span></button>
+    </div>
+    <figure class="orb-wrap">
+      <div class="orb" id="orb" aria-hidden="true"></div>
+      <figcaption id="orbCap">優勝確率</figcaption>
+    </figure>
+  </header>
+
+  <main id="main">
+    <p class="loading">読み込み中…</p>
+  </main>
+
+  <footer class="foot">
+    <p>データ：<a href="https://data.j-league.or.jp/" target="_blank" rel="noopener">J.League Data Site</a>（<span id="updated"></span> 取得）。
+    予測は今季の得点・失点から各チームの攻撃力・守備力を推定し、残り試合を<span id="runs"></span>回シミュレーションした結果です。
+    J3のJFL入れ替え戦の対象は目安です。</p>
+  </footer>
+</div>
+
+<dialog id="teamDlg" class="sheet">
+  <div class="sheet-head">
+    <h2 id="dlgTitle"></h2>
+    <button class="close" id="dlgClose" aria-label="閉じる"><span></span></button>
+  </div>
+  <div id="dlgBody"></div>
+</dialog>
+
+<div id="tip" class="tip" role="tooltip" hidden></div>
+
+<script src="../config.js?v=__V__"></script>
+<script src="../sim.js?v=__V__"></script>
+<script src="../app.js?v=__V__"></script>
+<script src="night.js?v=__V__"></script>
+</body>
+</html>
