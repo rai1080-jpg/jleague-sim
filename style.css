@@ -108,7 +108,8 @@ tr.z-top { --zc: var(--z-top); } tr.z-top2 { --zc: var(--z-top2); } tr.z-po { --
 .axis span { position: absolute; transform: translateX(-50%); }
 
 /* ---------- ヒートマップ ---------- */
-.heat { display: grid; gap: 2px; font-size: 11px; }
+.heat { display: grid; gap: 2px; font-size: 11px; grid-template-columns: 64px repeat(var(--n), minmax(13px, 1fr)); min-width: 340px; }
+@media (max-width: 480px) { .heat { grid-template-columns: 46px repeat(var(--n), minmax(0, 1fr)); gap: 1px; min-width: 0; font-size: 10.5px; } .heat .hh { font-size: 9px; } }
 .heat .hl { padding-right: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; align-self: center; }
 .heat .hc { height: 20px; border-radius: 2px; }
 .heat .hh { text-align: center; color: var(--ink-3); font-size: 10px; font-family: "Albert Sans", sans-serif; }
@@ -188,6 +189,16 @@ tr.is-fav td { background: color-mix(in srgb, var(--coral) 9%, transparent); }
 .sort-th { border: 0; background: none; padding: 0; font: inherit; color: inherit; text-align: right; line-height: 1.35; }
 .sort-th.on { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 .stats-tbl td.top3 { color: var(--mark); font-weight: 500; }
+
+/* スタッツ表：スマホ幅では選んだグループの列だけ表示 */
+.stat-groups { display: none; gap: 8px; margin-bottom: 10px; }
+td.wrap { white-space: normal; min-width: 6em; }
+@media (max-width: 600px) {
+  .stat-groups { display: flex; flex-wrap: wrap; }
+  .stats-tbl[data-group="atk"] :is(.g-def, .g-etc),
+  .stats-tbl[data-group="def"] :is(.g-atk, .g-etc),
+  .stats-tbl[data-group="etc"] :is(.g-atk, .g-def) { display: none; }
+}
 
 /* ---------- ツールチップ ---------- */
 .tip { position: fixed; z-index: 100; pointer-events: none; background: var(--ink); color: var(--bg); font-size: 12px; padding: 4px 10px; border-radius: 99px; white-space: nowrap; }

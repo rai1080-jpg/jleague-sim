@@ -10,7 +10,7 @@
   const DATA = window.DATA_BASE || "data/"; // 別デザインのページ（night/ など）からも同じデータを読む
   const todayStr = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
 
-  const state = { league: "j1", tab: "table", meta: null, L: {}, sort: "rank", sec: {}, statSort: { key: "gf", dir: -1 } };
+  const state = { league: "j1", tab: "table", meta: null, L: {}, sort: "rank", sec: {}, statSort: { key: "gf", dir: -1 }, statGroup: "atk" };
 
   // ---------- お気に入り（この端末のブラウザにだけ保存） ----------
   const FAV_KEY = "jleague-sim.favs";
@@ -154,7 +154,7 @@
           <div class="cur" style="width:${X(r.pts)}%"></div>
           <div class="rng" style="left:${X(s.p10)}%;width:${X(s.p90) - X(s.p10)}%"></div>
           <div class="med" style="left:${X(s.p50)}%"></div></div></td>
-        <td>${s.meanRank.toFixed(1)}</td>${cells}</tr>`;
+        <td class="hide-sm">${s.meanRank.toFixed(1)}</td>${cells}</tr>`;
     }).join("");
     const axis = `<div class="axis">${ticks.map((v) => `<span style="left:${X(v)}%">${v}</span>`).join("")}</div>`;
 
@@ -181,7 +181,7 @@
         <button class="chip" data-sort="rank" aria-pressed="${state.sort === "rank"}">現在の順位</button>
         <button class="chip" data-sort="pred" aria-pressed="${state.sort === "pred"}">予想順位</button></div>
       <div class="tbl-wrap"><table>
-        <thead><tr><th>順</th><th class="l">チーム</th><th>予想<br>勝点</th><th class="l hide-sm">${axis}</th><th>平均<br>順位</th>
+        <thead><tr><th>順</th><th class="l">チーム</th><th>予想<br>勝点</th><th class="l hide-sm">${axis}</th><th class="hide-sm">平均<br>順位</th>
         ${zones.map((z) => `<th>${esc(z.short)}</th>`).join("")}</tr></thead>
         <tbody>${rows}</tbody></table></div>
       ${legend(L.cfg)}
@@ -189,7 +189,7 @@
     <section class="card">
       <h2>最終順位の確率</h2>
       <p class="lead">色が濃いほど、その順位で終える確率が高い。マスをタップで数値表示。</p>
-      <div class="tbl-wrap"><div class="heat" style="grid-template-columns: 64px repeat(${T}, minmax(13px, 1fr)); min-width: 340px">${hm.join("")}</div></div>
+      <div class="tbl-wrap"><div class="heat" style="--n:${T}">${hm.join("")}</div></div>
       <div class="heat-scale">0%<span class="bar"></span>${pct(pMax)}</div>
     </section>`;
   }
@@ -305,18 +305,19 @@
     });
   }
   const STAT_COLS = [
-    { key: "gf", label: "得点", fmt: (v) => v },
-    { key: "ga", label: "失点", fmt: (v) => v, low: true },
-    { key: "shots", label: "シュート<br>/試合", fmt: (v) => v.toFixed(1) },
-    { key: "shotsA", label: "被シュート<br>/試合", fmt: (v) => v.toFixed(1), low: true },
-    { key: "conv", label: "決定率", fmt: (v) => (v * 100).toFixed(1) + "%" },
-    { key: "cs", label: "無失点", fmt: (v) => v },
-    { key: "ck", label: "CK<br>/試合", fmt: (v) => v.toFixed(1), sm: true },
-    { key: "fouls", label: "反則<br>/試合", fmt: (v) => v.toFixed(1), low: true, sm: true },
-    { key: "yellow", label: "警告", fmt: (v) => v, low: true, sm: true },
-    { key: "red", label: "退場", fmt: (v) => v, low: true, sm: true },
-    { key: "att", label: "ホーム平均<br>入場者", fmt: (v) => Math.round(v).toLocaleString(), sm: true },
+    { key: "gf", label: "得点", fmt: (v) => v, g: "atk" },
+    { key: "shots", label: "シュート<br>/試合", fmt: (v) => v.toFixed(1), g: "atk" },
+    { key: "conv", label: "決定率", fmt: (v) => (v * 100).toFixed(1) + "%", g: "atk" },
+    { key: "ck", label: "CK<br>/試合", fmt: (v) => v.toFixed(1), g: "atk" },
+    { key: "ga", label: "失点", fmt: (v) => v, low: true, g: "def" },
+    { key: "shotsA", label: "被シュート<br>/試合", fmt: (v) => v.toFixed(1), low: true, g: "def" },
+    { key: "cs", label: "無失点", fmt: (v) => v, g: "def" },
+    { key: "fouls", label: "反則<br>/試合", fmt: (v) => v.toFixed(1), low: true, g: "etc" },
+    { key: "yellow", label: "警告", fmt: (v) => v, low: true, g: "etc" },
+    { key: "red", label: "退場", fmt: (v) => v, low: true, g: "etc" },
+    { key: "att", label: "ホーム平均<br>入場者", fmt: (v) => Math.round(v).toLocaleString(), g: "etc" },
   ];
+  const STAT_GROUPS = [["atk", "攻撃"], ["def", "守備"], ["etc", "反則・観客"]];
   // 各項目のリーグ内順位（良いほうが1位）
   function statRanks(rows) {
     const rk = {};
@@ -336,32 +337,34 @@
     const ranks = statRanks(rows);
     const { key, dir } = state.statSort;
     rows.sort((a, b) => ((a[key] ?? -Infinity) - (b[key] ?? -Infinity)) * dir || L.row[a.t].rank - L.row[b.t].rank);
-    const head = STAT_COLS.map((c) => `<th class="${c.sm ? "hide-sm" : ""}"><button class="sort-th${c.key === key ? " on" : ""}" data-ssort="${c.key}">${c.label}${c.key === key ? (dir < 0 ? " ▼" : " ▲") : ""}</button></th>`).join("");
+    const head = STAT_COLS.map((c) => `<th class="g-${c.g}"><button class="sort-th${c.key === key ? " on" : ""}" data-ssort="${c.key}">${c.label}${c.key === key ? (dir < 0 ? " ▼" : " ▲") : ""}</button></th>`).join("");
     const body = rows.map((r, i) => `<tr class="${favCls(L, r.t)}"><td class="rank">${i + 1}</td><td class="l">${teamBtn(r.t)}</td>
       ${STAT_COLS.map((c) => {
         const v = r[c.key], top = ranks[r.t] && ranks[r.t][c.key + "Top"];
-        return `<td class="${c.sm ? "hide-sm " : ""}${c.key === key ? "pts " : ""}${top ? "top3" : ""}">${v == null ? "–" : c.fmt(v)}</td>`;
+        return `<td class="g-${c.g}${c.key === key ? " pts" : ""}${top ? " top3" : ""}">${v == null ? "–" : c.fmt(v)}</td>`;
       }).join("")}</tr>`).join("");
     const hasStats = Object.keys(L.teamStats).length > 0;
 
     // 得点ランキング（上位20位まで。同順位は全員）
     const sc = L.scorers.filter((p) => p.rank <= 20);
-    const scRows = sc.map((p) => `<tr class="${favCls(L, p.club)}"><td class="rank">${p.rank}</td><td class="l">${esc(p.name)}</td>
+    const scRows = sc.map((p) => `<tr class="${favCls(L, p.club)}"><td class="rank">${p.rank}</td><td class="l wrap">${esc(p.name)}</td>
       <td class="l">${L.row[p.club] ? teamBtn(p.club) : esc(p.club)}</td><td class="pts">${p.goals}</td>
-      <td>${p.shots ?? "–"}</td><td class="hide-sm">${p.shots ? ((p.goals / p.shots) * 100).toFixed(0) + "%" : "–"}</td>
+      <td class="hide-sm">${p.shots ?? "–"}</td><td class="hide-sm">${p.shots ? ((p.goals / p.shots) * 100).toFixed(0) + "%" : "–"}</td>
       <td class="hide-sm">${p.pkGoals ?? 0}</td><td>${p.apps ?? "–"}</td></tr>`).join("");
 
     return `<section class="card">
       <h2>チームスタッツ</h2>
-      <p class="lead">見出しをタップで並べ替え（もう一度で逆順）。色付きの数字はリーグ上位3チーム（同じ値が4チーム以上並ぶ項目は色なし。失点・被シュート・反則・警告・退場は少ないほうが上位）。
+      <p class="lead">見出しをタップで並べ替え（もう一度で逆順）。スマホでは上のボタンで項目を切り替え。色付きの数字はリーグ上位3チーム（同じ値が4チーム以上並ぶ項目は色なし。失点・被シュート・反則・警告・退場は少ないほうが上位）。
         決定率＝得点÷シュート数。${hasStats ? "" : "シュートなどの集計は取得できませんでした。"}</p>
-      <div class="tbl-wrap"><table class="stats-tbl"><thead><tr><th>順</th><th class="l">チーム</th>${head}</tr></thead>
+      <div class="stat-groups" role="group" aria-label="表示する項目">${STAT_GROUPS.map(([g, label]) =>
+        `<button class="chip" data-sgroup="${g}" aria-pressed="${state.statGroup === g}">${label}</button>`).join("")}</div>
+      <div class="tbl-wrap"><table class="stats-tbl" data-group="${state.statGroup}"><thead><tr><th>順</th><th class="l">チーム</th>${head}</tr></thead>
       <tbody>${body}</tbody></table></div>
     </section>
     <section class="card">
       <h2>得点ランキング</h2>
       <p class="lead">${sc.length ? "所属は現在のクラブ（シーズン途中の移籍は移籍先で表示）。" : "得点ランキングは取得できませんでした。"}</p>
-      ${sc.length ? `<div class="tbl-wrap"><table><thead><tr><th>順</th><th class="l">選手</th><th class="l">クラブ</th><th>得点</th><th>シュート</th>
+      ${sc.length ? `<div class="tbl-wrap"><table><thead><tr><th>順</th><th class="l">選手</th><th class="l">クラブ</th><th>得点</th><th class="hide-sm">シュート</th>
         <th class="hide-sm">決定率</th><th class="hide-sm">PK</th><th>出場</th></tr></thead><tbody>${scRows}</tbody></table></div>` : ""}
     </section>`;
   }
@@ -486,6 +489,12 @@
     else if (t.dataset.ssort) {
       const k = t.dataset.ssort, c = STAT_COLS.find((x) => x.key === k);
       state.statSort = state.statSort.key === k ? { key: k, dir: -state.statSort.dir } : { key: k, dir: c.low ? 1 : -1 };
+      render();
+    }
+    else if (t.dataset.sgroup) {
+      state.statGroup = t.dataset.sgroup;
+      const first = STAT_COLS.find((c) => c.g === state.statGroup); // 見えている列で並べ替える
+      state.statSort = { key: first.key, dir: first.low ? 1 : -1 };
       render();
     }
     else if (t.dataset.fav) {

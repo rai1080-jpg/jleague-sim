@@ -152,7 +152,8 @@ tbody tr:hover td { background: rgba(255,255,255,.025); }
 .axis span { position: absolute; transform: translateX(-50%); }
 
 /* ---------- ヒートマップ ---------- */
-.heat { display: grid; gap: 2px; font-size: 11px; }
+.heat { display: grid; gap: 2px; font-size: 11px; grid-template-columns: 64px repeat(var(--n), minmax(13px, 1fr)); min-width: 340px; }
+@media (max-width: 480px) { .heat { grid-template-columns: 46px repeat(var(--n), minmax(0, 1fr)); gap: 1px; min-width: 0; font-size: 10.5px; } .heat .hh { font-size: 9px; } }
 .heat .hl { padding-right: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; align-self: center; }
 .heat .hc { height: 20px; border-radius: 3px; }
 .heat .hh { text-align: center; color: var(--ink-3); font: 10px var(--en); }
@@ -242,6 +243,16 @@ tbody tr.is-fav:hover td { background: rgba(124, 108, 240, .2); }
 .sort-th.on { color: var(--ink); font-weight: 700; }
 .stats-tbl td.top3 { color: var(--heat-hi); font-weight: 600; }
 
+/* スタッツ表：スマホ幅では選んだグループの列だけ表示 */
+.stat-groups { display: none; gap: 8px; margin-bottom: 10px; }
+td.wrap { white-space: normal; min-width: 6em; }
+@media (max-width: 600px) {
+  .stat-groups { display: flex; flex-wrap: wrap; }
+  .stats-tbl[data-group="atk"] :is(.g-def, .g-etc),
+  .stats-tbl[data-group="def"] :is(.g-atk, .g-etc),
+  .stats-tbl[data-group="etc"] :is(.g-atk, .g-def) { display: none; }
+}
+
 /* ---------- ツールチップ ---------- */
 .tip { position: fixed; z-index: 100; pointer-events: none; background: #fff; color: #000; font-size: 12px; padding: 4px 12px; border-radius: 99px; white-space: nowrap; }
 
@@ -252,8 +263,8 @@ tbody tr.is-fav:hover td { background: rgba(124, 108, 240, .2); }
   .logo { display: flex; align-items: baseline; gap: 12px; padding-bottom: 10px; }
   .logo-mark { font-size: 20px; }
   .logo-sub { margin: 0; font-size: 12px; color: var(--ink-2); }
-  .tabs { flex-direction: row; gap: 4px 20px; margin: 0; overflow-x: auto; scrollbar-width: none; }
-  .tabs button { width: auto; padding: 10px 0 10px; font-size: 14px; white-space: nowrap; }
+  .tabs { flex-direction: row; gap: 4px 14px; margin: 0; overflow-x: auto; scrollbar-width: none; }
+  .tabs button { width: auto; padding: 10px 0 10px; font-size: 13.5px; white-space: nowrap; }
   .tabs button[aria-selected="true"]::after { right: auto; left: 50%; top: auto; bottom: 2px; margin: 0 0 0 -2.5px; }
   .pill-link { position: absolute; right: 26px; top: 18px; margin: 0; padding: 3px 12px; font-size: 12px; }
   .pill-link svg { width: 14px; height: 14px; }
@@ -273,8 +284,8 @@ tbody tr.is-fav:hover td { background: rgba(124, 108, 240, .2); }
   .more-dot { width: 58px; height: 58px; }
   .orb-wrap { justify-self: center; width: min(80vw, 380px); margin: 16px 0 0; }
   main { padding: 0 12px 16px; }
-  section.card { padding: 30px 20px 26px; border-radius: 16px; margin-bottom: 12px; }
-  .tbl-wrap { margin: 0 -20px; padding: 0 20px; }
+  section.card { padding: 28px 16px 24px; border-radius: 16px; margin-bottom: 12px; }
+  .tbl-wrap { margin: 0 -16px; padding: 0 16px; }
   .foot { padding: 20px 16px 24px; margin: 0; }
 }
 @media (max-width: 480px) {
