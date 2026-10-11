@@ -25,5 +25,9 @@ for (const lg of ["j1", "j2", "j3"]) {
   const pass = st2.every((r) => s2.find((x) => x.team === r.team).rankP[r.rank] === 1);
   console.log("  全消化テスト:", pass ? "OK" : "NG");
   ok = ok && pass;
+  // スタッツ（データサイトのチーム別集計）が順位表と食い違っていないか。更新の時間差で起こりうるので警告のみ
+  const ts = d.teamStats || {};
+  const off = st.filter((r) => ts[r.team] && (ts[r.team].games !== r.p || ts[r.team].gf !== r.gf || ts[r.team].ga !== r.ga)).map((r) => r.team);
+  console.log("  スタッツ:", `${Object.keys(ts).length}チーム・得点者${(d.scorers || []).length}人`, off.length ? `（順位表と不一致: ${off.join(" ")}）` : "順位表と一致");
 }
 process.exit(ok ? 0 : 1);

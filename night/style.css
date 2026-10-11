@@ -213,6 +213,35 @@ svg .band-top { fill: var(--z-top2); opacity: .14; } svg .band-po { fill: var(--
 .rest { font-size: 12.5px; }
 .rest td { padding: 7px 4px; }
 
+/* ---------- お気に入り ---------- */
+.fav-star { color: #ffd166; margin-right: 4px; display: inline-block; }
+tr.is-fav td { background: rgba(124, 108, 240, .14); }
+tbody tr.is-fav:hover td { background: rgba(124, 108, 240, .2); }
+.match.is-fav { margin: 0 -16px; padding-left: 16px; padding-right: 16px; border-radius: 12px; background: rgba(124, 108, 240, .1); }
+.fav-hint { margin: 0 0 var(--gap); padding: 14px 24px; border-radius: 99px; background: var(--panel); font-size: 13px; color: var(--ink-2); }
+.fav-sec { background: linear-gradient(135deg, rgba(124,108,240,.22), rgba(43,196,180,.12)), var(--panel); }
+.fav-sec h2 { margin-bottom: 14px; }
+.fav-card { background: rgba(0,0,0,.35); border-radius: 14px; padding: 16px 20px; }
+.fav-card + .fav-card { margin-top: 10px; }
+.fav-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 20px; }
+.fav-top .team-btn { font-size: 19px; font-weight: 700; }
+.fav-top b { font: 500 28px var(--en); margin-right: 3px; }
+.fav-rank, .fav-pts { font-size: 12px; color: var(--ink-2); }
+.fav-mid { display: flex; flex-wrap: wrap; gap: 2px 18px; margin: 8px 0 6px; font-size: 13px; }
+.fav-mid i { font-style: normal; font-size: 11.5px; color: var(--ink-3); margin-right: 6px; }
+.fav-next { font-size: 12.5px; color: var(--ink-2); }
+.fav-next .team-btn { color: var(--ink); }
+.fav-odds { display: inline-block; margin-left: 10px; }
+.fav-btn { display: block; width: 100%; height: 48px; margin: 8px 0 6px; border: 1px solid rgba(255,255,255,.35); border-radius: 99px; background: transparent; font-size: 14px; font-weight: 500; }
+.fav-btn:hover { border-color: var(--ink); }
+.fav-btn[aria-pressed="true"] { background: #fff; color: #000; border-color: #fff; }
+
+/* ---------- スタッツ ---------- */
+.sort-th { border: 0; background: none; padding: 0; font: inherit; color: inherit; text-align: right; line-height: 1.35; }
+.sort-th:hover { color: var(--ink); }
+.sort-th.on { color: var(--ink); font-weight: 700; }
+.stats-tbl td.top3 { color: var(--heat-hi); font-weight: 600; }
+
 /* ---------- ツールチップ ---------- */
 .tip { position: fixed; z-index: 100; pointer-events: none; background: #fff; color: #000; font-size: 12px; padding: 4px 12px; border-radius: 99px; white-space: nowrap; }
 

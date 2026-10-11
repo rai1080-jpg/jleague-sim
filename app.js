@@ -10,14 +10,25 @@
   const DATA = window.DATA_BASE || "data/"; // 別デザインのページ（night/ など）からも同じデータを読む
   const todayStr = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
 
-  const state = { league: "j1", tab: "table", meta: null, L: {}, sort: "rank", sec: {} };
+  const state = { league: "j1", tab: "table", meta: null, L: {}, sort: "rank", sec: {}, statSort: { key: "gf", dir: -1 } };
+
+  // ---------- お気に入り（この端末のブラウザにだけ保存） ----------
+  const FAV_KEY = "jleague-sim.favs";
+  let favs = {};
+  try { favs = JSON.parse(localStorage.getItem(FAV_KEY)) || {}; } catch (e) { favs = {}; }
+  const favList = (key) => (Array.isArray(favs[key]) ? favs[key] : []);
+  const isFav = (key, team) => favList(key).includes(team);
+  function toggleFav(key, team) {
+    favs[key] = isFav(key, team) ? favList(key).filter((t) => t !== team) : [...favList(key), team];
+    try { localStorage.setItem(FAV_KEY, JSON.stringify(favs)); } catch (e) { /* 保存できなくても画面上は反映する */ }
+  }
 
   // ---------- データ読み込みとシミュレーション ----------
   async function loadLeague(key) {
     if (state.L[key]) return state.L[key];
     const d = await fetch(`${DATA}${key}.json`, { cache: "no-cache" }).then((r) => r.json());
     const cfg = LC[key];
-    const L = { key, cfg, teams: d.teams, matches: d.matches };
+    const L = { key, cfg, teams: d.teams, matches: d.matches, teamStats: d.teamStats || {}, scorers: d.scorers || [] };
     L.table = J.standings(L.teams, L.matches);
     L.row = Object.fromEntries(L.table.map((r) => [r.team, r]));
     L.hist = J.rankHistory(L.teams, L.matches);
@@ -47,7 +58,8 @@
     const kinds = { top: "lg-top", top2: "lg-top2", po: "lg-po", down: "lg-down" };
     return `<div class="legend">${cfg.zones.map((z) => `<span><i class="${kinds[z.kind]}"></i>${esc(z.label)}</span>`).join("")}</div>`;
   }
-  const teamBtn = (t) => `<button class="team-btn" data-team="${esc(t)}">${esc(t)}</button>`;
+  const teamBtn = (t) => `<button class="team-btn" data-team="${esc(t)}">${isFav(state.league, t) ? `<span class="fav-star" aria-label="お気に入り">★</span>` : ""}${esc(t)}</button>`;
+  const favCls = (L, t) => (isFav(L.key, t) ? " is-fav" : "");
   const remaining = (L, team) => L.matches.filter((m) => m.hg == null && (m.home === team || m.away === team));
 
   // 目安ライン：各ゾーンの境目の順位が最終的に取る勝点
@@ -71,14 +83,14 @@
     const rows = L.table.map((r) => {
       const gd = r.gf - r.ga;
       const form = r.form.slice(-5).map((f) => `<span class="f-${f}" title="${{ W: "勝", D: "分", L: "敗" }[f]}">${{ W: "○", D: "△", L: "●" }[f]}</span>`).join("");
-      return `<tr class="${zoneClass(L.cfg, r.rank)}">
+      return `<tr class="${zoneClass(L.cfg, r.rank)}${favCls(L, r.team)}">
         <td class="rank">${r.rank}</td><td class="l">${teamBtn(r.team)}</td>
         <td class="pts">${r.pts}</td><td>${r.p}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td>
         <td class="hide-sm">${r.gf}</td><td class="hide-sm">${r.ga}</td><td>${gd > 0 ? "+" + gd : gd}</td>
         <td class="l form">${form}</td></tr>`;
     }).join("");
     const played = L.matches.filter((m) => m.hg != null).length;
-    return `<section class="card">
+    return `${favPanel(L)}<section class="card">
       <h2>${L.cfg.name} 順位表</h2>
       <p class="lead">${played} / ${L.matches.length} 試合消化。チーム名をタップすると詳細（順位推移・残り日程・必要な勝点）を表示します。</p>
       <div class="tbl-wrap"><table>
@@ -88,6 +100,35 @@
       ${legend(L.cfg)}
       <p class="lead">直近5試合：○勝 △分 ●敗（左が古い）。同勝点は 得失点差→総得点 の順。</p>
     </section>`;
+  }
+
+  // ---------- お気に入りのまとめ ----------
+  function nextMatch(L, team) {
+    return remaining(L, team).filter((m) => m.date >= todayStr).sort((a, b) => (a.date + a.ko).localeCompare(b.date + b.ko))[0];
+  }
+  function favPanel(L) {
+    const list = favList(L.key).filter((t) => L.row[t]);
+    if (!list.length) {
+      const any = Object.values(favs).some((v) => Array.isArray(v) && v.length);
+      return any ? "" : `<p class="fav-hint">チーム名をタップして ☆ を押すと、お気に入りに登録できます。</p>`;
+    }
+    const cards = list.map((t) => {
+      const r = L.row[t], s = sumOf(L, t), m = nextMatch(L, t);
+      const form = r.form.slice(-5).map((f) => `<span class="f-${f}">${{ W: "○", D: "△", L: "●" }[f]}</span>`).join("");
+      const zones = L.cfg.zones.map((z) => `<span><i>${esc(z.short)}</i>${pct(s.zoneP[z.key])}</span>`).join("");
+      let next = `<div class="fav-next muted">残り試合なし</div>`;
+      if (m) {
+        const home = m.home === t, opp = home ? m.away : m.home;
+        const o = J.outcomeProbs(...J.lambdas(L.model, m));
+        next = `<div class="fav-next"><span class="muted">次の試合</span> ${fmtDate(m.date)} ${esc(m.ko || "")}・${home ? "ホーム" : "アウェイ"}
+          vs ${teamBtn(opp)}（${L.row[opp].rank}位）<span class="fav-odds">勝 ${pct(home ? o.h : o.a)}・分 ${pct(o.d)}・負 ${pct(home ? o.a : o.h)}</span></div>`;
+      }
+      return `<div class="fav-card">
+        <div class="fav-top">${teamBtn(t)}<span class="fav-rank"><b>${r.rank}</b>位</span><span class="fav-pts"><b>${r.pts}</b>勝点</span><span class="form">${form}</span></div>
+        <div class="fav-mid"><span><i>予想最終</i>${s.meanPts.toFixed(0)}勝点・${s.meanRank.toFixed(1)}位</span>${zones}</div>
+        ${next}</div>`;
+    }).join("");
+    return `<section class="card fav-sec"><h2>お気に入り</h2>${cards}</section>`;
   }
 
   // ---------- タブ：最終予測 ----------
@@ -106,7 +147,7 @@
       }).join("");
       const tip = `${r.team}：現在 ${r.pts} → 予想 ${s.meanPts.toFixed(1)}（80%の確率で ${s.p10}〜${s.p90}）`;
       const pos = state.sort === "pred" ? i + 1 : r.rank;
-      return `<tr class="${zoneClass(L.cfg, pos)}">
+      return `<tr class="${zoneClass(L.cfg, pos)}${favCls(L, r.team)}">
         <td class="rank">${pos}</td><td class="l">${teamBtn(r.team)}</td>
         <td class="pts">${s.meanPts.toFixed(0)}<span class="rng-txt">${s.p10}–${s.p90}</span></td>
         <td class="hbar-cell hide-sm" data-tip="${esc(tip)}"><div class="ptsbar">
@@ -160,14 +201,15 @@
   }
   function matchCard(L, m) {
     const meta = `<div class="meta"><span>${fmtDate(m.date)} ${esc(m.ko || "")}</span><span>${esc(m.stadium || "")}</span></div>`;
+    const fc = isFav(L.key, m.home) || isFav(L.key, m.away) ? " is-fav" : "";
     if (m.hg != null) {
-      return `<div class="match">${meta}<div class="row"><div class="h">${teamBtn(m.home)}</div>
+      return `<div class="match${fc}">${meta}<div class="row"><div class="h">${teamBtn(m.home)}</div>
         <div class="sc">${m.hg} - ${m.ag}</div><div class="a">${teamBtn(m.away)}</div></div>
         ${m.att ? `<div class="meta"><span></span><span>入場者 ${m.att.toLocaleString()}人</span></div>` : ""}</div>`;
     }
     const [lh, la] = J.lambdas(L.model, m);
     const o = J.outcomeProbs(lh, la);
-    return `<div class="match">${meta}<div class="row"><div class="h">${teamBtn(m.home)}</div>
+    return `<div class="match${fc}">${meta}<div class="row"><div class="h">${teamBtn(m.home)}</div>
       <div class="sc vs">vs</div><div class="a">${teamBtn(m.away)}</div></div>
       <div class="probbar" aria-hidden="true"><div class="pb-h" style="width:${o.h * 100}%"></div><div class="pb-d" style="width:${o.d * 100}%"></div><div class="pb-a" style="width:${o.a * 100}%"></div></div>
       <div class="problbl"><span>ホーム勝 ${pct(o.h)}</span><span>引分 ${pct(o.d)} ・予想 ${o.score[0]}-${o.score[1]}</span><span>アウェイ勝 ${pct(o.a)}</span></div></div>`;
@@ -210,7 +252,7 @@
       return { t, n: rest.length, opp };
     }).sort((a, b) => b.opp - a.opp);
     const dmin = Math.min(...diff.map((d) => d.opp)), dmax = Math.max(...diff.map((d) => d.opp));
-    const diffRows = diff.map((d, i) => `<tr><td class="rank">${i + 1}</td><td class="l">${teamBtn(d.t)}</td><td>${d.n}</td>
+    const diffRows = diff.map((d, i) => `<tr class="${favCls(L, d.t)}"><td class="rank">${i + 1}</td><td class="l">${teamBtn(d.t)}</td><td>${d.n}</td>
       <td>${d.opp.toFixed(2)}</td><td class="hbar-cell"><div class="hbar" style="width:${8 + 92 * (d.opp - dmin) / ((dmax - dmin) || 1)}%"></div></td></tr>`).join("");
 
     // チーム力
@@ -223,7 +265,7 @@
     }).sort((a, b) => b.rating - a.rating);
     const powRows = power.map((p, i) => {
       const luck = p.ppg - p.xppg;
-      return `<tr><td class="rank">${i + 1}</td><td class="l">${teamBtn(p.t)}</td><td class="pts">${p.rating.toFixed(2)}</td>
+      return `<tr class="${favCls(L, p.t)}"><td class="rank">${i + 1}</td><td class="l">${teamBtn(p.t)}</td><td class="pts">${p.rating.toFixed(2)}</td>
         <td>${p.att.toFixed(0)}</td><td>${p.def.toFixed(0)}</td><td>${p.ppg.toFixed(2)}</td>
         <td class="luck ${Math.abs(luck) < 0.15 ? "" : luck > 0 ? "up" : "down"}">${luck > 0 ? "+" : ""}${luck.toFixed(2)}</td></tr>`;
     }).join("");
@@ -242,6 +284,86 @@
       「差」は実際の勝点ペースと、得点・失点の内容から見込まれる勝点ペースとの差。＋は内容以上に勝点を取れている（接戦に強い・運が良い）、−はその逆で、今後は平均に近づきやすい。</p>
       <div class="tbl-wrap"><table><thead><tr><th>順</th><th class="l">チーム</th><th>チーム力</th><th>攻撃</th><th>守備</th><th>勝点<br>ペース</th><th>差</th></tr></thead>
       <tbody>${powRows}</tbody></table></div></section>`;
+  }
+
+  // ---------- タブ：スタッツ ----------
+  // 試合データから出せる数字（無失点試合・ホーム平均入場者）と、データサイトのチーム別集計をまとめる
+  function teamStatRows(L) {
+    return L.teams.map((t) => {
+      const st = L.teamStats[t] || {};
+      const done = L.matches.filter((m) => m.hg != null && (m.home === t || m.away === t));
+      const cs = done.filter((m) => (m.home === t ? m.ag : m.hg) === 0).length;
+      const homeAtt = done.filter((m) => m.home === t && m.att);
+      const g = done.length || 1;
+      return {
+        t, n: done.length, gf: L.row[t].gf, ga: L.row[t].ga, cs,
+        att: homeAtt.length ? homeAtt.reduce((a, m) => a + m.att, 0) / homeAtt.length : null,
+        shots: st.shots != null ? st.shots / g : null, shotsA: st.shotsAgainst != null ? st.shotsAgainst / g : null,
+        conv: st.shots ? L.row[t].gf / st.shots : null, ck: st.ck != null ? st.ck / g : null,
+        fouls: st.fouls != null ? st.fouls / g : null, yellow: st.yellow, red: st.red,
+      };
+    });
+  }
+  const STAT_COLS = [
+    { key: "gf", label: "得点", fmt: (v) => v },
+    { key: "ga", label: "失点", fmt: (v) => v, low: true },
+    { key: "shots", label: "シュート<br>/試合", fmt: (v) => v.toFixed(1) },
+    { key: "shotsA", label: "被シュート<br>/試合", fmt: (v) => v.toFixed(1), low: true },
+    { key: "conv", label: "決定率", fmt: (v) => (v * 100).toFixed(1) + "%" },
+    { key: "cs", label: "無失点", fmt: (v) => v },
+    { key: "ck", label: "CK<br>/試合", fmt: (v) => v.toFixed(1), sm: true },
+    { key: "fouls", label: "反則<br>/試合", fmt: (v) => v.toFixed(1), low: true, sm: true },
+    { key: "yellow", label: "警告", fmt: (v) => v, low: true, sm: true },
+    { key: "red", label: "退場", fmt: (v) => v, low: true, sm: true },
+    { key: "att", label: "ホーム平均<br>入場者", fmt: (v) => Math.round(v).toLocaleString(), sm: true },
+  ];
+  // 各項目のリーグ内順位（良いほうが1位）
+  function statRanks(rows) {
+    const rk = {};
+    STAT_COLS.forEach((c) => {
+      const vals = rows.filter((r) => r[c.key] != null).map((r) => r[c.key]);
+      rows.forEach((r) => {
+        if (r[c.key] == null) return;
+        const better = vals.filter((v) => (c.low ? v < r[c.key] : v > r[c.key])).length;
+        (rk[r.t] = rk[r.t] || {})[c.key] = 1 + better;
+        rk[r.t][c.key + "Top"] = better + vals.filter((v) => v === r[c.key]).length <= 3; // 同じ値を含めて3チーム以内のときだけ目立たせる
+      });
+    });
+    return rk;
+  }
+  function viewStats(L) {
+    const rows = teamStatRows(L);
+    const ranks = statRanks(rows);
+    const { key, dir } = state.statSort;
+    rows.sort((a, b) => ((a[key] ?? -Infinity) - (b[key] ?? -Infinity)) * dir || L.row[a.t].rank - L.row[b.t].rank);
+    const head = STAT_COLS.map((c) => `<th class="${c.sm ? "hide-sm" : ""}"><button class="sort-th${c.key === key ? " on" : ""}" data-ssort="${c.key}">${c.label}${c.key === key ? (dir < 0 ? " ▼" : " ▲") : ""}</button></th>`).join("");
+    const body = rows.map((r, i) => `<tr class="${favCls(L, r.t)}"><td class="rank">${i + 1}</td><td class="l">${teamBtn(r.t)}</td>
+      ${STAT_COLS.map((c) => {
+        const v = r[c.key], top = ranks[r.t] && ranks[r.t][c.key + "Top"];
+        return `<td class="${c.sm ? "hide-sm " : ""}${c.key === key ? "pts " : ""}${top ? "top3" : ""}">${v == null ? "–" : c.fmt(v)}</td>`;
+      }).join("")}</tr>`).join("");
+    const hasStats = Object.keys(L.teamStats).length > 0;
+
+    // 得点ランキング（上位20位まで。同順位は全員）
+    const sc = L.scorers.filter((p) => p.rank <= 20);
+    const scRows = sc.map((p) => `<tr class="${favCls(L, p.club)}"><td class="rank">${p.rank}</td><td class="l">${esc(p.name)}</td>
+      <td class="l">${L.row[p.club] ? teamBtn(p.club) : esc(p.club)}</td><td class="pts">${p.goals}</td>
+      <td>${p.shots ?? "–"}</td><td class="hide-sm">${p.shots ? ((p.goals / p.shots) * 100).toFixed(0) + "%" : "–"}</td>
+      <td class="hide-sm">${p.pkGoals ?? 0}</td><td>${p.apps ?? "–"}</td></tr>`).join("");
+
+    return `<section class="card">
+      <h2>チームスタッツ</h2>
+      <p class="lead">見出しをタップで並べ替え（もう一度で逆順）。色付きの数字はリーグ上位3チーム（同じ値が4チーム以上並ぶ項目は色なし。失点・被シュート・反則・警告・退場は少ないほうが上位）。
+        決定率＝得点÷シュート数。${hasStats ? "" : "シュートなどの集計は取得できませんでした。"}</p>
+      <div class="tbl-wrap"><table class="stats-tbl"><thead><tr><th>順</th><th class="l">チーム</th>${head}</tr></thead>
+      <tbody>${body}</tbody></table></div>
+    </section>
+    <section class="card">
+      <h2>得点ランキング</h2>
+      <p class="lead">${sc.length ? "所属は現在のクラブ（シーズン途中の移籍は移籍先で表示）。" : "得点ランキングは取得できませんでした。"}</p>
+      ${sc.length ? `<div class="tbl-wrap"><table><thead><tr><th>順</th><th class="l">選手</th><th class="l">クラブ</th><th>得点</th><th>シュート</th>
+        <th class="hide-sm">決定率</th><th class="hide-sm">PK</th><th>出場</th></tr></thead><tbody>${scRows}</tbody></table></div>` : ""}
+    </section>`;
   }
 
   // ---------- チーム詳細 ----------
@@ -301,8 +423,16 @@
         <td>${L.row[opp].rank}位</td><td>${pct(w)}</td><td>${pct(o.d)}</td><td>${pct(l)}</td></tr>`;
     }).join("");
     const att = L.model.att[team] * 100, def = 100 / L.model.def[team];
+    const sRows = teamStatRows(L), sr = sRows.find((x) => x.t === team), srk = statRanks(sRows)[team] || {};
+    const statChips = STAT_COLS.filter((c) => sr[c.key] != null && !["gf", "ga"].includes(c.key)).map((c) =>
+      `<div class="stat"><div class="k">${c.label.replace("<br>", "")}</div><div class="v">${c.fmt(sr[c.key])}</div><div class="s">リーグ ${srk[c.key]}位</div></div>`).join("");
+    const myScorers = L.scorers.filter((p) => p.club === team).slice(0, 5);
+    const scorerHtml = myScorers.length ? `<div class="tbl-wrap"><table class="rest"><thead><tr><th class="l">選手</th><th>得点</th><th>シュート</th><th>出場</th><th>リーグ順位</th></tr></thead><tbody>
+      ${myScorers.map((p) => `<tr><td class="l">${esc(p.name)}</td><td>${p.goals}</td><td>${p.shots ?? "–"}</td><td>${p.apps ?? "–"}</td><td>${p.rank}位</td></tr>`).join("")}</tbody></table></div>` : "";
     $("#dlgTitle").textContent = `${team}（${L.cfg.name} ${r.rank}位・勝点${r.pts}）`;
+    const fav = isFav(L.key, team);
     $("#dlgBody").innerHTML = `
+      <button class="fav-btn" data-fav="${esc(team)}" aria-pressed="${fav}">${fav ? "★ お気に入り登録中（もう一度押すと解除）" : "☆ お気に入りに登録"}</button>
       <div class="chips">
         <div class="stat"><div class="k">予想最終勝点</div><div class="v">${s.meanPts.toFixed(0)}</div><div class="s">80%: ${s.p10}〜${s.p90}</div></div>
         <div class="stat"><div class="k">予想平均順位</div><div class="v">${s.meanRank.toFixed(1)}</div></div>
@@ -319,6 +449,8 @@
         <div class="stat"><div class="k">守備力</div><div class="v">${def.toFixed(0)}</div><div class="s">1試合 ${(r.p ? r.ga / r.p : 0).toFixed(2)}失点</div></div>
       </div>
       <p class="lead">攻撃力・守備力はリーグ平均＝100（対戦相手の強さを考慮）。</p>
+      ${statChips ? `<h3>スタッツ</h3><div class="chips">${statChips}</div>` : ""}
+      ${scorerHtml ? `<h3>チーム内の得点者</h3>${scorerHtml}` : ""}
       <h3>残り試合（${rest.length}）</h3>
       <div class="tbl-wrap"><table class="rest"><thead><tr><th class="l">節・日付</th><th class="l">相手</th><th>相手順位</th><th>勝</th><th>分</th><th>負</th></tr></thead><tbody>${restRows}</tbody></table></div>`;
     const dlg = $("#teamDlg");
@@ -337,7 +469,7 @@
       await new Promise((r) => setTimeout(r, 20));
       L = await loadLeague(state.league);
     }
-    const view = { table: viewTable, predict: viewPredict, fixtures: viewFixtures, insight: viewInsight }[state.tab];
+    const view = { table: viewTable, predict: viewPredict, fixtures: viewFixtures, stats: viewStats, insight: viewInsight }[state.tab] || viewTable;
     $("#main").innerHTML = view(L);
     // ページ固有の装飾（night/ の球体など）が描き直せるように知らせる
     document.dispatchEvent(new CustomEvent("league:rendered", { detail: { L } }));
@@ -351,6 +483,16 @@
     else if (t.dataset.tab) { state.tab = t.dataset.tab; render(); window.scrollTo(0, 0); }
     else if (t.dataset.team) { openTeam(t.dataset.team); }
     else if (t.dataset.sort) { state.sort = t.dataset.sort; render(); }
+    else if (t.dataset.ssort) {
+      const k = t.dataset.ssort, c = STAT_COLS.find((x) => x.key === k);
+      state.statSort = state.statSort.key === k ? { key: k, dir: -state.statSort.dir } : { key: k, dir: c.low ? 1 : -1 };
+      render();
+    }
+    else if (t.dataset.fav) {
+      toggleFav(state.league, t.dataset.fav);
+      openTeam(t.dataset.fav);
+      render();
+    }
     else if (t.dataset.secstep) { state.sec[L.key] = (state.sec[L.key] || defaultSec(L)) + Number(t.dataset.secstep); render(); }
     else if (t.id === "dlgClose") { $("#teamDlg").close(); }
   });
@@ -378,6 +520,7 @@
   (async function init() {
     const m = location.hash.match(/^#(j[123])(?:\/(\w+))?/);
     if (m) { state.league = m[1]; if (m[2]) state.tab = m[2]; }
+    else { const k = ["j1", "j2", "j3"].find((x) => favList(x).length); if (k) state.league = k; } // お気に入りのリーグから開く
     try {
       state.meta = await fetch(`${DATA}meta.json`, { cache: "no-cache" }).then((r) => r.json());
       $("#season").textContent = state.meta.season;
