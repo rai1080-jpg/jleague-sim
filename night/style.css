@@ -268,10 +268,12 @@ td.wrap { white-space: normal; min-width: 6em; }
 }
 
 /* ---------- 予測の推移 ---------- */
+.hist-chart { display: block; max-width: 640px; } /* 広い画面で大きくなりすぎないように */
 svg .hl { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 svg .hl.fav { stroke-width: 3.4; }
 .hist-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 8px; font-size: 12.5px; }
 .hist-legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: 3px; background: var(--c); }
+.hist-legend i.dash { background: repeating-linear-gradient(90deg, var(--c) 0 5px, transparent 5px 8px); }
 .hist-legend b { font-weight: 500; color: var(--ink-2); }
 
 /* ---------- ツールチップ ---------- */

@@ -198,7 +198,35 @@
   }
 
   // 予測の推移：各節の時点で、その節までの結果だけを使って予測し直した確率の線グラフ
-  const HIST_COLORS = ["#e56c5e", "#2f6bd8", "#1f9e6a", "#c040c8", "#c99a1e", "#7c6cf0", "#2bb3a3", "#9a6b3c"];
+  // 線の色はチームカラー。背景で見えにくい色は明るさを調整し（地とのコントラスト3以上）、
+  // 先に並んだチームと似た色ならサブの色に、それでも似ていれば点線にする
+  const rgbOf = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const lumOf = (c) => {
+    const [r, g, b] = c.map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const contrast = (a, b) => { const [x, y] = [lumOf(a), lumOf(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+  const colorDist = (a, b) => { const rm = (a[0] + b[0]) / 2; return Math.sqrt((2 + rm / 256) * (a[0] - b[0]) ** 2 + 4 * (a[1] - b[1]) ** 2 + (2 + (255 - rm) / 256) * (a[2] - b[2]) ** 2); };
+  function teamColors(teams) {
+    const dark = lumOf((getComputedStyle(document.body).backgroundColor.match(/\d+/g) || [255, 255, 255]).slice(0, 3).map(Number)) < 0.2;
+    const bg = dark ? [30, 30, 34] : [227, 235, 235]; // グラフの地（ダーク版は半透明のカード、ライト版は青灰）
+    const fit = (hex) => {
+      let c = rgbOf(hex);
+      const to = dark ? 255 : 0;
+      for (let i = 0; i < 12 && contrast(c, bg) < 3; i++) c = c.map((v) => Math.round(v + (to - v) * 0.15));
+      return c;
+    };
+    const used = [], out = {};
+    teams.forEach((t) => {
+      const [main, sub] = (window.TEAM_COLORS || {})[t] || ["#888888", "#555555"];
+      const cands = [fit(main), fit(sub)];
+      const ok = cands.find((c) => used.every((u) => colorDist(c, u) >= 110));
+      const c = ok || cands[0];
+      used.push(c);
+      out[t] = { c: `rgb(${c.join(",")})`, dash: !ok };
+    });
+    return out;
+  }
   function predHistory(L) {
     const H = L.phist;
     if (!H || !H.secs.length) return "";
@@ -226,15 +254,16 @@
       `<line class="grid" x1="${pl}" x2="${W - pr}" y1="${y(v)}" y2="${y(v)}"/><text x="${pl - 5}" y="${y(v) + 3}" text-anchor="end">${Math.round(v * 100)}%</text>`).join("");
     const step = n > 20 ? 5 : n > 10 ? 2 : 1;
     const xt = H.secs.map((s, i) => (i % step === 0 || i === last ? `<text x="${x(i)}" y="${Ht - 6}" text-anchor="middle">${s}</text>` : "")).join("");
-    const lines = teams.map((t, k) => {
-      const c = HIST_COLORS[k % HIST_COLORS.length], v = series(t), fav = isFav(L.key, t);
+    const col = teamColors(teams);
+    const lines = teams.map((t) => {
+      const c = col[t].c, v = series(t), fav = isFav(L.key, t);
       const d = v.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p).toFixed(1)}`).join("");
       const tips = v.map((p, i) => `<circle cx="${x(i)}" cy="${y(p)}" r="${fav ? 3.4 : 2.6}" fill="${c}"/>` +
         `<circle cx="${x(i)}" cy="${y(p)}" r="9" fill="transparent" data-tip="${esc(t)}・第${H.secs[i]}節${H.complete[i] ? "" : "（途中）"}：${esc(zone.short)} ${pct(p)}"/>`).join("");
-      return `<path class="hl${fav ? " fav" : ""}" d="${d}" stroke="${c}"/>${tips}`;
+      return `<path class="hl${fav ? " fav" : ""}" d="${d}" stroke="${c}"${col[t].dash ? ' stroke-dasharray="6 4"' : ""}/>${tips}`;
     }).join("");
-    const legend = teams.map((t, k) => `<span><i style="--c:${HIST_COLORS[k % HIST_COLORS.length]}"></i>${teamBtn(t)} <b>${pct(series(t)[last])}</b></span>`).join("");
-    return `${head}<svg viewBox="0 0 ${W} ${Ht}" width="100%" role="img" aria-label="${esc(zone.short)}の確率の推移">${grid}${xt}${lines}</svg>
+    const legend = teams.map((t) => `<span><i class="${col[t].dash ? "dash" : ""}" style="--c:${col[t].c}"></i>${teamBtn(t)} <b>${pct(series(t)[last])}</b></span>`).join("");
+    return `${head}<svg class="hist-chart" viewBox="0 0 ${W} ${Ht}" width="100%" role="img" aria-label="${esc(zone.short)}の確率の推移">${grid}${xt}${lines}</svg>
       <div class="hist-legend">${legend}</div><p class="lead" style="margin-top:6px">横軸は節。</p></section>`;
   }
 
