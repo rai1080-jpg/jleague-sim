@@ -510,6 +510,39 @@
   });
   $("#teamDlg").addEventListener("click", (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });
 
+  // 横スワイプでタブを切り替える（左へ＝次のタブ、右へ＝前のタブ）。
+  // タブボタンを押したのと同じ扱いにするので、ページ側のスクロール処理（night.js など）もそのまま働く
+  const TAB_ORDER = [...document.querySelectorAll("#tabs [data-tab]")].map((b) => b.dataset.tab);
+  let swipe = null;
+  // 指を置いた場所が横に動かせる表の中なら、その表を覚えておく
+  function scrollerX(el) {
+    for (; el && el !== document.body; el = el.parentElement) {
+      const ox = getComputedStyle(el).overflowX;
+      if ((ox === "auto" || ox === "scroll") && el.scrollWidth > el.clientWidth + 1) return el;
+    }
+    return null;
+  }
+  document.addEventListener("touchstart", (e) => {
+    const t = e.target;
+    if (e.touches.length !== 1 || $("#teamDlg").open || t.closest("#tabs, #leagueSeg, select, input, .side")) { swipe = null; return; }
+    const sc = scrollerX(t);
+    swipe = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now(), sc, left: sc ? sc.scrollLeft : 0 };
+  }, { passive: true });
+  document.addEventListener("touchend", (e) => {
+    if (!swipe) return;
+    const p = e.changedTouches[0], dx = p.clientX - swipe.x, dy = p.clientY - swipe.y, s = swipe;
+    swipe = null;
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.8 || Date.now() - s.t > 800) return;
+    // 表がその向きにまだ動かせた／実際に動いたときは、表のスクロールとして扱う
+    if (s.sc) {
+      const canMove = dx < 0 ? s.left + s.sc.clientWidth < s.sc.scrollWidth - 1 : s.left > 0;
+      if (canMove || s.sc.scrollLeft !== s.left) return;
+    }
+    const i = TAB_ORDER.indexOf(state.tab) + (dx < 0 ? 1 : -1);
+    if (i < 0 || i >= TAB_ORDER.length) return;
+    $(`#tabs [data-tab="${TAB_ORDER[i]}"]`).click();
+  }, { passive: true });
+
   // ツールチップ（マウスのホバーとタップの両方）
   const tip = $("#tip");
   function showTip(e) {
