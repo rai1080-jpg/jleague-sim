@@ -45,6 +45,11 @@ button { font: inherit; color: inherit; cursor: pointer; letter-spacing: inherit
 .hero-lead { margin: 0; font-size: 14px; font-weight: 500; letter-spacing: .1em; line-height: 2; color: var(--ink); }
 .ib { display: inline-block; }
 .eyebrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding-right: 72px; } /* 右上の線画と重ならないように */
+.brand { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); }
+.brand-mark { width: 30px; height: 30px; flex: none; }
+.brand-word { font: 400 17px/1 "Albert Sans", sans-serif; letter-spacing: .01em; }
+.brand-word b { font-weight: 500; }
+.brand-season { font: 400 12px/1 "Albert Sans", sans-serif; letter-spacing: .08em; color: var(--ink-2); align-self: flex-end; margin-bottom: 2px; }
 .mode-link { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 14px; border: 1px solid var(--ink); border-radius: 50%;
   font-size: 12px; letter-spacing: .06em; text-decoration: none; color: var(--ink); background: transparent; }
 .mode-link svg { width: 13px; height: 13px; fill: var(--ink); }

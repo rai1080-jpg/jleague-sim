@@ -53,9 +53,13 @@ button { font: inherit; color: inherit; cursor: pointer; letter-spacing: inherit
   display: flex; flex-direction: column; gap: 12px; }
 .side-panel { flex: 1; min-height: 0; overflow-y: auto; background: var(--panel); border-radius: 18px; padding: 40px 30px 28px;
   display: flex; flex-direction: column; }
-.logo { display: block; text-decoration: none; padding-bottom: 26px; border-bottom: 1px solid var(--line); }
-.logo-mark { display: block; font: 600 30px/1 var(--en); letter-spacing: .14em; }
-.logo-sub { display: block; margin-top: 8px; font: 500 14px/1.3 var(--en); letter-spacing: .02em; }
+.logo { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 0 14px; text-decoration: none;
+  padding-bottom: 26px; border-bottom: 1px solid var(--line); }
+.logo-mark { grid-row: span 2; width: 48px; height: 48px; }
+.logo-word { font: 400 22px/1.08 var(--en); letter-spacing: -.01em; }
+.logo-word b { display: block; font-weight: 600; }
+.logo-word > span { display: block; color: var(--ink-2); }
+.logo-sub { grid-column: 2; margin-top: 8px; font: 500 10.5px/1 var(--en); letter-spacing: .16em; text-transform: uppercase; color: var(--ink-3); }
 .tabs { display: flex; flex-direction: column; margin: 28px 0 auto; }
 .tabs button { position: relative; display: block; width: 100%; text-align: left; border: 0; background: none; padding: 13px 0;
   font-size: 15px; font-weight: 500; color: var(--ink-2); transition: color .15s; }
@@ -247,9 +251,11 @@ td.wrap { white-space: normal; min-width: 6em; }
 @media (max-width: 959px) {
   .side { position: sticky; top: 0; left: 0; bottom: auto; width: auto; display: block; padding: 10px 12px 0; background: var(--bg); }
   .side-panel { padding: 14px 18px 4px; border-radius: 16px; overflow: visible; }
-  .logo { display: flex; align-items: baseline; gap: 12px; padding-bottom: 10px; }
-  .logo-mark { font-size: 20px; }
-  .logo-sub { margin: 0; font-size: 12px; color: var(--ink-2); }
+  .logo { display: flex; align-items: center; gap: 10px; padding-bottom: 10px; }
+  .logo-mark { width: 30px; height: 30px; }
+  .logo-word { font-size: 17px; }
+  .logo-word b, .logo-word > span { display: inline; }
+  .logo-sub { display: none; }
   .tabs { flex-direction: row; gap: 4px 14px; margin: 0; overflow-x: auto; scrollbar-width: none; }
   .tabs button { width: auto; padding: 10px 0 10px; font-size: 13.5px; white-space: nowrap; }
   .tabs button[aria-selected="true"]::after { right: auto; left: 50%; top: auto; bottom: 2px; margin: 0 0 0 -2.5px; }
@@ -275,7 +281,6 @@ td.wrap { white-space: normal; min-width: 6em; }
 @media (max-width: 480px) {
   .hide-sm { display: none; }
   th, td { padding: 10px 3px; }
-  .logo-sub { display: none; }
   .sheet-head { padding: 18px 16px 12px; }
   #dlgBody { padding: 8px 16px 24px; }
   #dlgBody .tbl-wrap { margin: 0 -16px; padding: 0 16px; }
