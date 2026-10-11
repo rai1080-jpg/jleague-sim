@@ -27,6 +27,8 @@
 
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
+html, body { overflow-x: clip; } /* スワイプで本文を横に動かしても横スクロールが出ないように */
+#main { touch-action: pan-y; } /* 横の動きはスワイプ用に使う */
 body {
   margin: 0; background: var(--bg); color: var(--ink);
   font: 400 14px/1.7 var(--sans); letter-spacing: .03em;

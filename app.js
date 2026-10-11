@@ -516,7 +516,10 @@
   // 横スワイプでタブを切り替える（左へ＝次のタブ、右へ＝前のタブ）。
   // タブボタンを押したのと同じ扱いにするので、ページ側のスクロール処理（night.js など）もそのまま働く
   const TAB_ORDER = [...document.querySelectorAll("#tabs [data-tab]")].map((b) => b.dataset.tab);
-  let swipe = null;
+  // 指に合わせて本文が横についてきて、離すと勢いのまま流れ、次のタブが反対側から減速しながら入ってくる
+  const main = $("#main");
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let swipe = null, animating = false;
   // 指を置いた場所が横に動かせる表の中なら、その表を覚えておく
   function scrollerX(el) {
     for (; el && el !== document.body; el = el.parentElement) {
@@ -525,26 +528,73 @@
     }
     return null;
   }
+  const setX = (x, ms = 0, ease = "linear", opacity = 1) => {
+    main.style.transition = ms ? `transform ${ms}ms ${ease}, opacity ${ms}ms ${ease}` : "none";
+    main.style.transform = x ? `translate3d(${x}px,0,0)` : "";
+    main.style.opacity = opacity === 1 ? "" : String(opacity);
+  };
+  const after = (ms) => new Promise((r) => setTimeout(r, ms));
+  async function slideTo(next, dir, v) {
+    animating = true;
+    const W = main.clientWidth;
+    // 離した瞬間の速さに合わせて流れ出る時間を決める（速く払うほど短い）
+    const rest = W - Math.abs(main._dx || 0);
+    const outMs = Math.max(110, Math.min(260, rest / Math.max(Math.abs(v), 1.2)));
+    setX(dir * W, outMs, "cubic-bezier(.25,.6,.4,1)", .2);
+    await after(outMs);
+    $(`#tabs [data-tab="${next}"]`).click(); // タブを押したのと同じ扱い（スクロール位置の処理も含む）
+    setX(-dir * W * .35, 0, "linear", 0);
+    void main.offsetWidth; // 位置を確定させてから動かす
+    setX(0, 340, "cubic-bezier(.12,.85,.25,1)", 1); // 惰性で滑って止まる動き
+    await after(350);
+    setX(0);
+    animating = false;
+  }
   document.addEventListener("touchstart", (e) => {
     const t = e.target;
-    if (e.touches.length !== 1 || $("#teamDlg").open || t.closest("#tabs, #leagueSeg, select, input, .side")) { swipe = null; return; }
+    if (animating || e.touches.length !== 1 || $("#teamDlg").open || !t.closest("#main, .hero") || t.closest("select, input")) { swipe = null; return; }
     const sc = scrollerX(t);
-    swipe = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now(), sc, left: sc ? sc.scrollLeft : 0 };
+    swipe = { x: e.touches[0].clientX, y: e.touches[0].clientY, sc, left: sc ? sc.scrollLeft : 0, lock: null, pts: [] };
   }, { passive: true });
-  document.addEventListener("touchend", (e) => {
+  document.addEventListener("touchmove", (e) => {
     if (!swipe) return;
-    const p = e.changedTouches[0], dx = p.clientX - swipe.x, dy = p.clientY - swipe.y, s = swipe;
-    swipe = null;
-    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.8 || Date.now() - s.t > 800) return;
-    // 表がその向きにまだ動かせた／実際に動いたときは、表のスクロールとして扱う
-    if (s.sc) {
-      const canMove = dx < 0 ? s.left + s.sc.clientWidth < s.sc.scrollWidth - 1 : s.left > 0;
-      if (canMove || s.sc.scrollLeft !== s.left) return;
+    const p = e.touches[0], dx = p.clientX - swipe.x, dy = p.clientY - swipe.y;
+    if (!swipe.lock) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      // 縦の動きが勝てば普通のスクロール。横に動かせる表がその向きにまだ動くなら表のスクロールを優先
+      const horiz = Math.abs(dx) > Math.abs(dy) * 1.2;
+      const tableFirst = swipe.sc && (dx < 0 ? swipe.left + swipe.sc.clientWidth < swipe.sc.scrollWidth - 1 : swipe.left > 0);
+      if (!horiz || tableFirst) { swipe = null; return; }
+      swipe.lock = "x";
     }
+    if (e.cancelable) e.preventDefault();
     const i = TAB_ORDER.indexOf(state.tab) + (dx < 0 ? 1 : -1);
-    if (i < 0 || i >= TAB_ORDER.length) return;
-    $(`#tabs [data-tab="${TAB_ORDER[i]}"]`).click();
-  }, { passive: true });
+    const edge = i < 0 || i >= TAB_ORDER.length;
+    const x = edge ? dx * .25 : dx; // 端のタブでは引っ張っても少ししか動かない
+    main._dx = x;
+    setX(x);
+    swipe.pts.push([Date.now(), p.clientX]);
+    if (swipe.pts.length > 5) swipe.pts.shift();
+  }, { passive: false });
+  const endSwipe = (e) => {
+    if (!swipe) return;
+    const s = swipe;
+    swipe = null;
+    if (s.lock !== "x") return;
+    const p = e.changedTouches[0], dx = p.clientX - s.x;
+    // 直近の動きから離した瞬間の速さ（px/ms）を出す
+    const [t0, x0] = s.pts[0] || [Date.now(), p.clientX];
+    const v = (p.clientX - x0) / Math.max(1, Date.now() - t0);
+    const dir = dx < 0 ? -1 : 1;
+    const i = TAB_ORDER.indexOf(state.tab) - dir;
+    const go = i >= 0 && i < TAB_ORDER.length && (Math.abs(dx) > main.clientWidth * .28 || (Math.abs(v) > .45 && Math.sign(v) === dir));
+    if (go && !reduceMotion) slideTo(TAB_ORDER[i], dir, v);
+    else if (go) { setX(0); $(`#tabs [data-tab="${TAB_ORDER[i]}"]`).click(); }
+    else { setX(0, 260, "cubic-bezier(.2,.8,.3,1)"); after(270).then(() => !animating && setX(0)); } // 元の位置へ戻る
+    main._dx = 0;
+  };
+  document.addEventListener("touchend", endSwipe, { passive: true });
+  document.addEventListener("touchcancel", (e) => { if (swipe && swipe.lock) { swipe = null; setX(0, 200, "ease-out"); } else swipe = null; }, { passive: true });
 
   // ツールチップ（マウスのホバーとタップの両方）
   const tip = $("#tip");
