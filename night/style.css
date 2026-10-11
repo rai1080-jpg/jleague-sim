@@ -36,6 +36,13 @@ body {
   font: 400 14px/1.75 var(--sans); letter-spacing: .04em;
   font-feature-settings: "tnum"; font-variant-numeric: tabular-nums;
 }
+/* 背景の抽象画（動かない）。表やカードは不透明な地の上に置くので数字の見やすさは変わらない。
+   見出しが乗る左側と、スマホでは全体を暗くして文字のコントラストを保つ */
+body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(90deg, rgba(0,0,0,.78) 0%, rgba(0,0,0,.45) 45%, rgba(0,0,0,.05) 80%), url("bg.svg") center / cover no-repeat; }
+@media (max-width: 959px) {
+  body::before { background: linear-gradient(180deg, rgba(0,0,0,.3), rgba(0,0,0,.5)), url("bg.svg") 70% center / cover no-repeat; }
+}
 a { color: var(--ink); text-underline-offset: 3px; }
 button { font: inherit; color: inherit; cursor: pointer; letter-spacing: inherit; }
 .muted { color: var(--ink-3); }
@@ -77,7 +84,7 @@ button { font: inherit; color: inherit; cursor: pointer; letter-spacing: inherit
 .content { margin-left: calc(var(--side-w) + var(--gap) * 2); min-width: 0; }
 
 /* ---------- ヒーロー ---------- */
-.hero { position: relative; min-height: 100vh; min-height: 100svh; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+.hero { position: relative; min-height: 100vh; min-height: 100svh; display: grid; grid-template-columns: minmax(0, 1fr);
   align-items: center; gap: 24px; padding: 64px 0 64px 68px; overflow: hidden; }
 .hero-text { position: relative; z-index: 1; }
 .hero h1 { margin: 0 0 40px; font: 500 clamp(40px, 4.6vw, 68px)/1.18 var(--en); letter-spacing: -.02em; }
@@ -88,22 +95,6 @@ button { font: inherit; color: inherit; cursor: pointer; letter-spacing: inherit
 .more-dot::after { content: ""; position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: #000; }
 .more:hover .more-dot { transform: scale(1.06); }
 
-/* 球体：虹色の縁を、内側を透明にしたぼかしで作る */
-.orb-wrap { margin: 0 -8% 0 0; justify-self: end; width: 112%; max-width: 760px; text-align: center; }
-.orb { position: relative; aspect-ratio: 1; border-radius: 50%; }
-.orb::before { content: ""; position: absolute; inset: 0; border-radius: 50%;
-  background: conic-gradient(from 210deg, #c4e04a 0deg, #2bc4b4 70deg, #2f6bd8 130deg, #7c6cf0 170deg, #c040c8 215deg, #3a1a40 260deg, #000 290deg, #10302c 330deg, #c4e04a 360deg);
-  -webkit-mask: radial-gradient(closest-side, transparent 80%, #000 99%); mask: radial-gradient(closest-side, transparent 80%, #000 99%);
-  filter: blur(14px); opacity: .9; }
-.orb::after { content: ""; position: absolute; inset: 6%; border-radius: 50%; background: radial-gradient(closest-side, rgba(255,255,255,.04), transparent 75%); }
-.ball { position: absolute; z-index: 1; width: var(--d); aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%;
-  background: radial-gradient(circle at 34% 28%, rgba(255,255,255,.55), transparent 16%),
-              radial-gradient(circle at 50% 55%, #000 30%, color-mix(in srgb, var(--c) 70%, #000) 70%, var(--c) 100%);
-  box-shadow: 0 0 24px color-mix(in srgb, var(--c) 45%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--c) 80%, #fff 0%); }
-.ball-lbl { position: absolute; z-index: 2; transform: translateX(-50%); margin-top: 8px; white-space: nowrap;
-  font-size: 12px; font-weight: 500; color: var(--ink); text-shadow: 0 0 6px #000, 0 0 2px #000; }
-.ball-lbl b { margin-left: 6px; font: 500 12px var(--en); color: var(--ink-2); }
-.orb-wrap figcaption { margin-top: 4px; font-size: 12px; color: var(--ink-3); letter-spacing: .1em; }
 
 /* ---------- 本文 ---------- */
 main { padding: 0 var(--gap) 24px 0; }
@@ -282,7 +273,6 @@ td.wrap { white-space: normal; min-width: 6em; }
   .hero-lead { font-size: 13.5px; margin-bottom: 28px; }
   .more { font-size: 18px; gap: 18px; }
   .more-dot { width: 58px; height: 58px; }
-  .orb-wrap { justify-self: center; width: min(80vw, 380px); margin: 16px 0 0; }
   main { padding: 0 12px 16px; }
   section.card { padding: 28px 16px 24px; border-radius: 16px; margin-bottom: 12px; }
   .tbl-wrap { margin: 0 -16px; padding: 0 16px; }
@@ -295,5 +285,4 @@ td.wrap { white-space: normal; min-width: 6em; }
   .sheet-head { padding: 18px 16px 12px; }
   #dlgBody { padding: 8px 16px 24px; }
   #dlgBody .tbl-wrap { margin: 0 -16px; padding: 0 16px; }
-  .ball-lbl { font-size: 11px; }
 }

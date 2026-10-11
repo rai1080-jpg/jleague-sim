@@ -474,8 +474,6 @@
     }
     const view = { table: viewTable, predict: viewPredict, fixtures: viewFixtures, stats: viewStats, insight: viewInsight }[state.tab] || viewTable;
     $("#main").innerHTML = view(L);
-    // ページ固有の装飾（night/ の球体など）が描き直せるように知らせる
-    document.dispatchEvent(new CustomEvent("league:rendered", { detail: { L } }));
   }
 
   document.addEventListener("click", (e) => {
@@ -504,6 +502,11 @@
     }
     else if (t.dataset.secstep) { state.sec[L.key] = (state.sec[L.key] || defaultSec(L)) + Number(t.dataset.secstep); render(); }
     else if (t.id === "dlgClose") { $("#teamDlg").close(); }
+  });
+  // ライト版⇔ダーク版のリンクは、いま見ているリーグとタブを引き継ぐ
+  document.addEventListener("click", (e) => {
+    const a = e.target.closest("a[data-mode-link]");
+    if (a) a.href = a.getAttribute("href").split("#")[0] + `#${state.league}/${state.tab}`;
   });
   document.addEventListener("change", (e) => {
     if (e.target.id === "secSel") { state.sec[state.league] = Number(e.target.value); render(); }

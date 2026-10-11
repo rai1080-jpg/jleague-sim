@@ -44,6 +44,12 @@ button { font: inherit; color: inherit; cursor: pointer; letter-spacing: inherit
 .hero h1 { margin: 0 0 14px; font-size: clamp(22px, 4.2vw, 34px); font-weight: 500; letter-spacing: .12em; line-height: 1.5; }
 .hero-lead { margin: 0; font-size: 14px; font-weight: 500; letter-spacing: .1em; line-height: 2; color: var(--ink); }
 .ib { display: inline-block; }
+.eyebrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding-right: 72px; } /* 右上の線画と重ならないように */
+.mode-link { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 14px; border: 1px solid var(--ink); border-radius: 50%;
+  font-size: 12px; letter-spacing: .06em; text-decoration: none; color: var(--ink); background: transparent; }
+.mode-link svg { width: 13px; height: 13px; fill: var(--ink); }
+.mode-link:hover { background: var(--ink); color: var(--bg); }
+.mode-link:hover svg { fill: var(--bg); }
 .mark { position: absolute; right: 24px; top: 28px; width: 56px; height: 70px; }
 .mark path { fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linecap: round; }
 
@@ -207,6 +213,7 @@ td.wrap { white-space: normal; min-width: 6em; }
   .hero { padding: 28px 16px 20px; }
   .mark { right: 16px; top: 22px; width: 42px; height: 54px; }
   .hero h1 { padding-right: 48px; }
+  .eyebrow { padding-right: 52px; }
   .tabs { padding: 10px 16px; gap: 4px 14px; }
   .tabs button { font-size: 14px; }
   main { padding: 24px 16px; }
